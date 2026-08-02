@@ -1,0 +1,20 @@
+# Node.js
+node_modules/
+FrontendCashAdvance/node_modules/
+
+# Logs
+*.log
+
+# Environment variables
+.env
+
+# Build folders
+dist/
+build/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/

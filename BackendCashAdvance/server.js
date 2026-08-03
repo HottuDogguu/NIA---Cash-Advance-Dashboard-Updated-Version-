@@ -9,6 +9,11 @@ import fs from "fs";
 import { fileURLToPath } from "url";
 
 dotenv.config();
+console.log("Current working directory:", process.cwd());
+console.log("DB_HOST:", process.env.DB_HOST);
+console.log("DB_USER:", process.env.DB_USER);
+console.log("DB_PASSWORD:", process.env.DB_PASSWORD);
+console.log("DB_DATABASE:", process.env.DB_DATABASE);
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);

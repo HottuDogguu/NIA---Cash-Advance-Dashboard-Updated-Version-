@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { NavLink, useNavigate } from "react-router-dom";
 import { FiCheck, FiX, FiLogOut } from "react-icons/fi";
 import { MdDashboard, MdBarChart, MdHistory } from "react-icons/md";
-import logo from "../assets/logo.jpg";
+import logo from "../assets/Logo.png";
 
 export default function Sidebar() {
   const [officials, setOfficials] = useState([]);

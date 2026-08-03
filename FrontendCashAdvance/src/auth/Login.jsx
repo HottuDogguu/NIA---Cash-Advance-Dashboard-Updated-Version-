@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import logo from "../assets/logo.jpg";
+import logo from "../assets/Logo.png";
 
 export default function Login() {
   const [username, setUsername]       = useState("");
@@ -47,7 +47,7 @@ export default function Login() {
           src={logo}
           alt=""
           aria-hidden="true"
-          className="w-[420px] h-[420px] object-contain opacity-15"
+          className="w-[500px] h-[500px] object-contain opacity-15"
         />
       </div>
 
@@ -138,11 +138,6 @@ export default function Login() {
             {loading ? "Signing in…" : "Sign In"}
           </button>
         </form>
-
-        {/* Hint */}
-        <p className="text-center text-xs text-gray-400 mt-5">
-          Default: <span className="font-semibold">admin / admin123</span>
-        </p>
       </div>
     </div>
   );

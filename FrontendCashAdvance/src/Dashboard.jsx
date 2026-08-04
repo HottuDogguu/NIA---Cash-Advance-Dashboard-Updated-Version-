@@ -50,7 +50,7 @@ export default function Dashboard() {
 
   const EMPTY_FORM = {
     dv_date: "", dv_number: "", accountable_official: "",
-    bonded_official_id: "", description: "",
+    bonded_official_id: "", custom_official: "", description: "",
     amount: "", spent: "", refund: "", status: "",
     remarks: "", date_submitted_to_coa: "",
   };
@@ -92,8 +92,23 @@ export default function Dashboard() {
   useEffect(() => { fetchStats(); fetchOfficials(); }, [fetchStats, fetchOfficials]);
 
   // ── Handlers ─────────────────────────────────────────────
-  const handleChange = (e) =>
-    setFormData({ ...formData, [e.target.name]: e.target.value });
+const handleChange = (e) => {
+    const { name, value } = e.target;
+    let updatedData = { ...formData, [name]: value };
+
+    // Automatically calculate the refund if amount or spent changes
+    if (name === "amount" || name === "spent") {
+      const currentAmount = name === "amount" ? Number(value) : Number(formData.amount || 0);
+      const currentSpent = name === "spent" ? Number(value) : Number(formData.spent || 0);
+      
+      const calculatedRefund = currentAmount - currentSpent;
+      
+      // Update the refund field (prevents negative numbers if spent > amount)
+      updatedData.refund = calculatedRefund > 0 ? calculatedRefund.toFixed(2) : "0.00";
+    }
+
+    setFormData(updatedData);
+  };
 
   const openAdd = () => {
     setIsEditing(false); setEditId(null);
@@ -121,6 +136,12 @@ export default function Dashboard() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     const payload = { ...formData, user_id: user.id };
+    
+    // If N/A was chosen, send null for bonded_official_id so MySQL accepts it
+    if (payload.bonded_official_id === "NA") {
+      payload.bonded_official_id = null;
+    }
+
     try {
       if (isEditing) {
         await axios.put(`${API}/api/cash_advance_dashboard/${editId}`, payload);
@@ -275,18 +296,34 @@ export default function Dashboard() {
 
               {/* Bonded Official */}
               <div className="flex flex-col gap-1">
-                <label className="text-xs font-semibold text-gray-600">Bonded Official</label>
-                <select name="bonded_official_id" value={formData.bonded_official_id}
-                  onChange={handleChange}
-                  className="border border-gray-200 p-3 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-purple-300">
-                  <option value="">— Select bonded official —</option>
-                  {officials.map((o) => (
-                    <option key={o.id} value={o.id} disabled={!o.is_available && String(o.id) !== String(formData.bonded_official_id)}>
-                      {o.name} {!o.is_available ? "(Unavailable)" : ""}
-                    </option>
-                  ))}
-                </select>
-              </div>
+              <label className="text-xs font-semibold text-gray-600">Bonded Official</label>
+              <select name="bonded_official_id" value={formData.bonded_official_id}
+                onChange={handleChange}
+                className="border border-gray-200 p-3 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-purple-300">
+                <option value="">— Select bonded official —</option>
+                <option value="NA">N/A (Not Applicable)</option>
+                {officials.map((o) => (
+                  <option key={o.id} value={o.id} disabled={!o.is_available && String(o.id) !== String(formData.bonded_official_id)}>
+                    {o.name} {!o.is_available ? "(Unavailable)" : ""}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+              {/* Conditional Custom Official Input (Shows only when N/A is selected) */}
+              {formData.bonded_official_id === "NA" && (
+                <div className="flex flex-col gap-1">
+                  <label className="text-xs font-semibold text-gray-600">Specify Official Name (Optional)</label>
+                  <input 
+                    type="text" 
+                    name="custom_official" 
+                    placeholder="Enter official name..." 
+                    value={formData.custom_official} 
+                    onChange={handleChange}
+                    className="border border-gray-200 p-3 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-purple-300" 
+                  />
+                </div>
+              )}
 
               {/* Description */}
               <div className="flex flex-col gap-1 md:col-span-2">
@@ -315,9 +352,9 @@ export default function Dashboard() {
               {/* Refund */}
               <div className="flex flex-col gap-1">
                 <label className="text-xs font-semibold text-gray-600">Refund (₱)</label>
-                <input type="number" name="refund" placeholder="0.00" step="0.01" min="0"
-                  value={formData.refund} onChange={handleChange}
-                  className="border border-gray-200 p-3 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-purple-300" />
+                <input type="number" name="refund" placeholder="0.00" step="0.01" 
+                  value={formData.refund} readOnly
+                  className="border border-gray-200 p-3 rounded-xl text-sm bg-gray-100 text-gray-500 cursor-not-allowed focus:outline-none" />
               </div>
 
               {/* Status */}

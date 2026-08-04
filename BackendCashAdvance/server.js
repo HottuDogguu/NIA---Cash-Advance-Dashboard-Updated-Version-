@@ -44,6 +44,7 @@ const pool = mysql.createPool({
   database: process.env.DB_DATABASE || "cash_advance_dashboard",
   waitForConnections: true,
   connectionLimit: 10,
+  dateStrings: true,
 });
 
 (async () => {

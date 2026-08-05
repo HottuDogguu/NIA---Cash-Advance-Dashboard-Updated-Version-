@@ -26,22 +26,23 @@ export default function DataTable({ data, handleDelete, handleEdit }) {
 
   return (
     <div>
-      {/* Horizontally scrollable to match the Excel column layout */}
+      {/* Scrollable Bar*/}
       <div className="overflow-x-auto rounded-xl border border-purple-100">
         <table className="text-xs text-left" style={{ minWidth: "2200px" }}>
           <thead>
             {/* Group headers */}
             <tr style={{ background: "#C9A0DC" }} className="text-white font-bold text-center">
-              <th className="px-3 py-2 border border-purple-300" colSpan={2}>DV</th>
+              <th className="px-3 py-2 border border-purple-300" colSpan={3}>DV</th>
               <th className="px-3 py-2 border border-purple-300" colSpan={2}>Officials</th>
-              <th className="px-3 py-2 border border-purple-300" colSpan={1}>Description</th>
+              <th className="px-3 py-2 border border-purple-300" rowSpan={2}>Description</th>
               <th className="px-3 py-2 border border-purple-300" colSpan={2}>Check</th>
               <th className="px-3 py-2 border border-purple-300" colSpan={3}>Financials</th>
+              <th className="px-3 py-2 border border-purple-300" rowSpan={2}>Reimbursement</th>
               <th className="px-3 py-2 border border-purple-300" colSpan={3}>Collection Receipt</th>
               <th className="px-3 py-2 border border-purple-300" colSpan={3}>Liquidated</th>
               <th className="px-3 py-2 border border-purple-300" colSpan={2}>Status</th>
               {(handleEdit || handleDelete) && (
-                <th className="px-3 py-2 border border-purple-300">Actions</th>
+                <th className="px-3 py-2 border border-purple-300" rowSpan={2}>Actions</th>
               )}
             </tr>
             {/* Column headers */}
@@ -50,8 +51,7 @@ export default function DataTable({ data, handleDelete, handleEdit }) {
               <th className="px-3 py-2 border border-purple-200 whitespace-nowrap">DV Date</th>
               <th className="px-3 py-2 border border-purple-200 whitespace-nowrap">DV Number</th>
               <th className="px-3 py-2 border border-purple-200 whitespace-nowrap">Bonded Official</th>
-              <th className="px-3 py-2 border border-purple-200 whitespace-nowrap">Accountable Officer</th>
-              <th className="px-3 py-2 border border-purple-200 whitespace-nowrap min-w-[220px]">Description</th>
+              <th className="px-3 py-2 border border-purple-200 whitespace-nowrap">Responsible Officer</th>
               <th className="px-3 py-2 border border-purple-200 whitespace-nowrap">Check Date</th>
               <th className="px-3 py-2 border border-purple-200 whitespace-nowrap">Check Number</th>
               <th className="px-3 py-2 border border-purple-200 whitespace-nowrap">Amount</th>
@@ -65,9 +65,6 @@ export default function DataTable({ data, handleDelete, handleEdit }) {
               <th className="px-3 py-2 border border-purple-200 whitespace-nowrap">Liquidation Report No.</th>
               <th className="px-3 py-2 border border-purple-200 whitespace-nowrap">Status</th>
               <th className="px-3 py-2 border border-purple-200 whitespace-nowrap">Date Submitted to COA</th>
-              {(handleEdit || handleDelete) && (
-                <th className="px-3 py-2 border border-purple-200 whitespace-nowrap">Actions</th>
-              )}
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-100 bg-white">
@@ -84,9 +81,7 @@ export default function DataTable({ data, handleDelete, handleEdit }) {
                 {/* Accountable Officer */}
                 <td className="px-3 py-3 border-r border-gray-100 whitespace-nowrap">{item.accountable_official}</td>
                 {/* Description */}
-                <td className="px-3 py-3 border-r border-gray-100 max-w-[220px]">
-                  <div className="truncate" title={item.description || ""}>{item.description || "—"}</div>
-                </td>
+                <td className="px-3 py-3 border-r border-gray-100 max-w-[220px]"><div className="truncate" title={item.description || ""}>{item.description || "—"}</div></td>
                 {/* Check Date */}
                 <td className="px-3 py-3 border-r border-gray-100 whitespace-nowrap">{fmtDate(item.check_date)}</td>
                 {/* Check Number */}
@@ -96,9 +91,9 @@ export default function DataTable({ data, handleDelete, handleEdit }) {
                 {/* Spent */}
                 <td className="px-3 py-3 border-r border-gray-100 whitespace-nowrap">{fmtMoney(item.spent)}</td>
                 {/* Refund */}
-                <td className={`px-3 py-3 border-r border-gray-100 font-semibold whitespace-nowrap ${Number(item.refund||0) > 0 ? "text-red-500" : ""}`}>
-                  {fmtMoney(item.refund)}
-                </td>
+                <td className={`px-3 py-3 border-r border-gray-100 font-semibold whitespace-nowrap ${Number(item.refund||0) > 0 ? "text-red-500" : ""}`}>{fmtMoney(item.refund)}</td>
+                {/* Reimbursement Checkbox */}
+                <td className="px-3 py-3 border-r border-gray-100 text-center"><input type="checkbox" checked={item.is_reimbursement ? true : false} readOnly className="w-4 h-4 text-purple-600 rounded border-gray-300"/></td>
                 {/* CR Date */}
                 <td className="px-3 py-3 border-r border-gray-100 whitespace-nowrap">{fmtDate(item.collection_receipt_date)}</td>
                 {/* CR Number */}

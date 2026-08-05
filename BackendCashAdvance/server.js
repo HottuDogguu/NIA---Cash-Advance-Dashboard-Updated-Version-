@@ -220,15 +220,36 @@ app.get("/api/cash_advance_dashboard", async (req, res) => {
       WHERE ca.deleted_at IS NULL
     `;
     const params = [];
+    
     if (search) {
-      sql += ` AND (ca.dv_number LIKE ? OR ca.accountable_official LIKE ? OR ca.status LIKE ? OR bo.name LIKE ? OR ca.description LIKE ? OR ca.bur_number LIKE ? OR ca.liquidation_report_number LIKE ?)`;
+      sql += ` AND (
+        ca.dv_number LIKE ? OR 
+        ca.accountable_official LIKE ? OR 
+        ca.status LIKE ? OR 
+        bo.name LIKE ? OR 
+        ca.description LIKE ? OR 
+        ca.bur_number LIKE ? OR 
+        ca.liquidation_report_number LIKE ? OR
+        CAST(ca.amount AS CHAR) LIKE ? OR
+        CAST(ca.spent AS CHAR) LIKE ? OR
+        CAST(ca.refund AS CHAR) LIKE ? OR
+        MONTHNAME(ca.dv_date) LIKE ? OR
+        MONTHNAME(ca.check_date) LIKE ? OR
+        MONTHNAME(ca.collection_receipt_date) LIKE ? OR
+        MONTHNAME(ca.liquidated_date) LIKE ? OR
+        MONTHNAME(ca.date_submitted_to_coa) LIKE ?
+      )`;
+      
       const q = `%${search}%`;
-      params.push(q,q,q,q,q,q,q);
+      params.push(q,q,q,q,q,q,q,q,q,q,q,q,q,q,q); 
     }
+    
     sql += " ORDER BY ca.created_at DESC";
     const [rows] = await pool.query(sql, params);
     res.json(rows);
-  } catch (e) { res.status(500).json({ message: e.message }); }
+  } catch (e) { 
+    res.status(500).json({ message: e.message }); 
+  }
 });
 
 // POST create

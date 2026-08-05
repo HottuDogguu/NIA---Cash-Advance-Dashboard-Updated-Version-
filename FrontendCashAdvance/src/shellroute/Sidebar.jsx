@@ -31,7 +31,7 @@ export default function Sidebar() {
   ];
 
   return (
-    <aside className="w-64 flex flex-col h-full flex-shrink-0" style={{ background: "#DAA5F6" }}>
+    <aside className="w-64 flex flex-col h-full flex-shrink-0 overflow-y-auto" style={{ background: "#DAA5F6" }}>
 
       {/* Header */}
       <div className="h-16 flex items-center px-4 gap-3 flex-shrink-0" style={{ background: "#B66ECE" }}>
@@ -61,7 +61,7 @@ export default function Sidebar() {
                     <td className="px-2 py-2 text-right">
                       {o.is_available ? (
                         <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-full bg-green-100 text-green-700 text-xs">
-                          <FiCheck className="w-2.5 h-2.5" /> OK
+                          <FiCheck className="w-2.5 h-2.5" /> Available
                         </span>
                       ) : (
                         <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-full bg-red-100 text-red-600 text-xs">

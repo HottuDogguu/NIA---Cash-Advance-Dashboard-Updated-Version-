@@ -42,9 +42,9 @@ function SectionLabel({ children }) {
 
 const EMPTY_FORM = {
   fund: "", dv_date: "", dv_number: "",
-  bonded_official_id: "", accountable_official: "", description: "",
+  bonded_official_id: "", accountable_official: "", custom_official: "", description: "",
   check_date: "", check_number: "",
-  amount: "", spent: "", refund: "",
+  amount: "", spent: "", refund: "", is_reimbursement: false,
   collection_receipt_date: "", collection_receipt_number: "", date_deposited: "",
   liquidated_date: "", bur_number: "", liquidation_report_number: "",
   status: "", remarks: "", date_submitted_to_coa: "",
@@ -66,54 +66,93 @@ export default function Dashboard() {
   const isAdmin     = user.role === "admin";
   const isCashStaff = user.role === "admin" || user.role === "cash_user";
 
-  const showToast = (msg, type = "success") => {
-    setToast({ message: msg, type });
+  const showToast = (message, type = "success") => {
+    setToast({ message, type });
     setTimeout(() => setToast(null), 3000);
   };
 
+  // Fetch 
   const fetchData = useCallback(async () => {
     try {
-      const q = searchQuery ? `?search=${encodeURIComponent(searchQuery)}` : "";
-      const res = await axios.get(`${API}/api/cash_advance_dashboard${q}`);
+      const params = searchQuery ? `?search=${encodeURIComponent(searchQuery)}` : "";
+      const res = await axios.get(`${API}/api/cash_advance_dashboard${params}`);
       setData(res.data || []);
-    } catch { showToast("Failed to load records.", "error"); }
-    finally { setLoading(false); }
+    } catch {
+      showToast("Failed to load records.", "error");
+    } finally {
+      setLoading(false);
+    }
   }, [searchQuery]);
 
-  const fetchStats     = useCallback(async () => { try { const r = await axios.get(`${API}/api/stats`); setStats(r.data); } catch {} }, []);
-  const fetchOfficials = useCallback(async () => { try { const r = await axios.get(`${API}/onlyoneBonded_Officials`); setOfficials(r.data || []); } catch {} }, []);
+  const fetchStats = useCallback(async () => {
+    try {
+      const res = await axios.get(`${API}/api/stats`);
+      setStats(res.data);
+    } catch { /* non-critical */ }
+  }, []);
+
+  const fetchOfficials = useCallback(async () => {
+    try {
+      const res = await axios.get(`${API}/onlyoneBonded_Officials`);
+      setOfficials(res.data || []);
+    } catch { /* non-critical */ }
+  }, []);
 
   useEffect(() => { fetchData(); }, [fetchData]);
   useEffect(() => { fetchStats(); fetchOfficials(); }, [fetchStats, fetchOfficials]);
 
-  const handleChange = (e) => setFormData({ ...formData, [e.target.name]: e.target.value });
+  // Handlers 
+  const handleChange = (e) => {
+    const { name, value, type, checked } = e.target;
+    // Handle checkboxes properly for is_reimbursement
+    const val = type === "checkbox" ? checked : value;
+    
+    let updatedData = { ...formData, [name]: val };
 
-  const openAdd = () => { setIsEditing(false); setEditId(null); setFormData(EMPTY_FORM); setShowModal(true); };
+    // Automatically calculate the refund if amount or spent changes
+    if (name === "amount" || name === "spent") {
+      const currentAmount = name === "amount" ? Number(value) : Number(formData.amount || 0);
+      const currentSpent = name === "spent" ? Number(value) : Number(formData.spent || 0);
+      
+      const calculatedRefund = currentAmount - currentSpent;
+      
+      // Update the refund field (prevents negative numbers if spent > amount)
+      updatedData.refund = calculatedRefund > 0 ? calculatedRefund.toFixed(2) : "0.00";
+    }
+
+    setFormData(updatedData);
+  };
+
+  const openAdd = () => {
+    setIsEditing(false); setEditId(null);
+    setFormData(EMPTY_FORM); setShowModal(true);
+  };
 
   const openEdit = (item) => {
     setIsEditing(true); setEditId(item.id);
-    const d = (v) => v?.split?.("T")[0] || "";
     setFormData({
-      fund:                        item.fund                        || "",
-      dv_date:                     d(item.dv_date),
-      dv_number:                   item.dv_number                   || "",
-      bonded_official_id:          item.bonded_official_id          || "",
-      accountable_official:        item.accountable_official        || "",
-      description:                 item.description                 || "",
-      check_date:                  d(item.check_date),
-      check_number:                item.check_number                || "",
-      amount:                      item.amount                      || "",
-      spent:                       item.spent                       || "",
-      refund:                      item.refund                      || "",
-      collection_receipt_date:     d(item.collection_receipt_date),
-      collection_receipt_number:   item.collection_receipt_number   || "",
-      date_deposited:              d(item.date_deposited),
-      liquidated_date:             d(item.liquidated_date),
-      bur_number:                  item.bur_number                  || "",
-      liquidation_report_number:   item.liquidation_report_number   || "",
-      status:                      item.status                      || "",
-      remarks:                     item.remarks                     || "",
-      date_submitted_to_coa:       d(item.date_submitted_to_coa),
+      fund:                      item.fund || "",
+      dv_date:                   item.dv_date?.split("T")[0] || "",
+      dv_number:                 item.dv_number || "",
+      accountable_official:      item.accountable_official || "",
+      bonded_official_id:        item.bonded_official_id || "",
+      custom_official:           "",
+      description:               item.description || "",
+      check_date:                item.check_date?.split("T")[0] || "",
+      check_number:              item.check_number || "",
+      amount:                    item.amount || "",
+      spent:                     item.spent || "",
+      refund:                    item.refund || "",
+      is_reimbursement:          item.is_reimbursement ? true : false,
+      collection_receipt_date:   item.collection_receipt_date?.split("T")[0] || "",
+      collection_receipt_number: item.collection_receipt_number || "",
+      date_deposited:            item.date_deposited?.split("T")[0] || "",
+      liquidated_date:           item.liquidated_date?.split("T")[0] || "",
+      bur_number:                item.bur_number || "",
+      liquidation_report_number: item.liquidation_report_number || "",
+      status:                    item.status || "",
+      remarks:                   item.remarks || "",
+      date_submitted_to_coa:     item.date_submitted_to_coa?.split("T")[0] || "",
     });
     setShowModal(true);
   };
@@ -121,42 +160,50 @@ export default function Dashboard() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     const payload = { ...formData, user_id: user.id };
+    
+    // If N/A was chosen, send null for bonded_official_id so MySQL accepts it
+    if (payload.bonded_official_id === "NA") {
+      payload.bonded_official_id = null;
+    }
+
     try {
       if (isEditing) {
         await axios.put(`${API}/api/cash_advance_dashboard/${editId}`, payload);
-        showToast("Record updated successfully!");
+        showToast("Cash advance updated successfully!");
       } else {
         await axios.post(`${API}/api/cash_advance_dashboard`, payload);
         showToast("Cash advance added successfully!");
       }
       setShowModal(false);
       fetchData(); fetchStats(); fetchOfficials();
-    } catch { showToast("Something went wrong. Please try again.", "error"); }
+    } catch {
+      showToast("Something went wrong. Please try again.", "error");
+    }
   };
 
   const handleDelete = async (id) => {
-    if (!window.confirm("Delete this record? This cannot be undone.")) return;
+    if (!window.confirm("Delete this cash advance? This action cannot be undone.")) return;
     try {
       await axios.delete(`${API}/api/cash_advance_dashboard/${id}`, { data: { user_id: user.id } });
       showToast("Record deleted.");
       fetchData(); fetchStats(); fetchOfficials();
-    } catch { showToast("Failed to delete.", "error"); }
+    } catch {
+      showToast("Failed to delete record.", "error");
+    }
   };
 
-  const fmt = (n) => "₱" + Number(n||0).toLocaleString("en-PH", { minimumFractionDigits: 2 });
-  const chartData = [...data].reverse().slice(0,6).map((d) => ({
-    name: d.dv_number, amount: Number(d.amount||0), spent: Number(d.spent||0), refund: Number(d.refund||0),
+  const fmt = (n) =>
+    "₱" + Number(n || 0).toLocaleString("en-PH", { minimumFractionDigits: 2 });
+
+  // Chart data – last 6 records
+  const chartData = [...data].reverse().slice(0, 6).map((d) => ({
+    name: d.dv_number,
+    amount: Number(d.amount || 0),
+    spent:  Number(d.spent  || 0),
+    refund: Number(d.refund || 0),
   }));
 
-  // Input helper
-  const Field = ({ label, name, type = "text", placeholder = "" }) => (
-    <div className="flex flex-col gap-1">
-      <label className="text-xs font-semibold text-gray-600">{label}</label>
-      <input type={type} name={name} value={formData[name]} onChange={handleChange} placeholder={placeholder}
-        className="border border-gray-200 p-2.5 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-purple-300" />
-    </div>
-  );
-
+  // Render 
   return (
     <div className="flex flex-col gap-6 min-h-full">
       <Toast toast={toast} />
@@ -164,22 +211,25 @@ export default function Dashboard() {
       {/* STAT CARDS */}
       {stats && (
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-          <StatCard label="Total Records"   value={stats.totalRecords}               color="#7c3aed" sub={`Total: ${fmt(stats.totalAmount)}`} />
-          <StatCard label="Ongoing"         value={stats.ongoingCount}               color="#d97706" sub={`Amount: ${fmt(stats.ongoingAmount)}`} />
-          <StatCard label="Completed"       value={stats.completedCount}             color="#059669" sub={`Amount: ${fmt(stats.completedAmount)}`} />
-          <StatCard label="Total Refunds"   value={fmt(stats.totalRefunds)}          color="#dc2626" />
+          <StatCard label="Total Records"      value={stats.totalRecords}                color="#7c3aed"
+                    sub={`Total: ${fmt(stats.totalAmount)}`} />
+          <StatCard label="Ongoing"            value={stats.ongoingCount}                color="#d97706"
+                    sub={`Amount: ${fmt(stats.ongoingAmount)}`} />
+          <StatCard label="Completed"          value={stats.completedCount}              color="#059669"
+                    sub={`Amount: ${fmt(stats.completedAmount)}`} />
+          <StatCard label="Total Refunds"      value={fmt(stats.totalRefunds)}           color="#dc2626" />
         </div>
       )}
 
       {/* CHARTS */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <div className="bg-white rounded-3xl p-6 shadow-sm border border-purple-100 h-72">
-          <h2 className="font-semibold text-gray-700 mb-3 text-sm">Recent Trend</h2>
+          <h2 className="font-semibold text-gray-700 mb-3 text-sm">Recent Cash Advances – Trend</h2>
           <ResponsiveContainer width="100%" height="100%">
             <LineChart data={chartData}>
               <CartesianGrid strokeDasharray="3 3" stroke="#f0e6ff" />
-              <XAxis dataKey="name" tick={{ fontSize: 10 }} />
-              <YAxis tick={{ fontSize: 10 }} />
+              <XAxis dataKey="name" tick={{ fontSize: 11 }} />
+              <YAxis tick={{ fontSize: 11 }} />
               <Tooltip formatter={(v) => fmt(v)} />
               <Legend />
               <Line type="monotone" dataKey="amount" stroke="#ec4899" strokeWidth={2} dot={{ r: 3 }} />
@@ -188,13 +238,14 @@ export default function Dashboard() {
             </LineChart>
           </ResponsiveContainer>
         </div>
+
         <div className="bg-white rounded-3xl p-6 shadow-sm border border-purple-100 h-72">
-          <h2 className="font-semibold text-gray-700 mb-3 text-sm">Monthly Summary</h2>
+          <h2 className="font-semibold text-gray-700 mb-3 text-sm">Monthly Summary – Bar</h2>
           <ResponsiveContainer width="100%" height="100%">
             <BarChart data={chartData}>
               <CartesianGrid strokeDasharray="3 3" stroke="#f0e6ff" />
-              <XAxis dataKey="name" tick={{ fontSize: 10 }} />
-              <YAxis tick={{ fontSize: 10 }} />
+              <XAxis dataKey="name" tick={{ fontSize: 11 }} />
+              <YAxis tick={{ fontSize: 11 }} />
               <Tooltip formatter={(v) => fmt(v)} />
               <Legend />
               <Bar dataKey="amount" fill="#d8b4fe" radius={[4,4,0,0]} />
@@ -206,121 +257,244 @@ export default function Dashboard() {
       </div>
 
       {/* TABLE */}
-      <div className="bg-white rounded-3xl p-6 shadow-sm border border-purple-100">
+      <div className="bg-white rounded-3xl p-6 shadow-sm border border-purple-100 flex-1">
         <div className="flex items-center justify-between mb-5">
           <h2 className="text-lg font-bold text-purple-900">Cash Advance Records</h2>
-          {isCashStaff && (
-            <button onClick={openAdd}
-              className="bg-purple-600 hover:bg-purple-700 text-white px-5 py-2 rounded-xl shadow-md transition font-semibold text-sm">
-              + Add Cash Advance
-            </button>
-          )}
+          <button
+            onClick={openAdd}
+            className="bg-purple-600 hover:bg-purple-700 text-white px-5 py-2 rounded-xl shadow-md transition font-semibold text-sm"
+          >
+            + Add Cash Advance
+          </button>
         </div>
+
         {loading ? (
           <div className="text-center py-16 text-gray-400">
             <div className="animate-spin w-8 h-8 border-4 border-purple-200 border-t-purple-600 rounded-full mx-auto mb-3" />
             Loading records…
           </div>
         ) : (
-          <DataTable
-            data={data}
-            handleDelete={isAdmin ? handleDelete : null}
-            handleEdit={isCashStaff ? openEdit : null}
-          />
+          <DataTable data={data} handleDelete={handleDelete} handleEdit={openEdit} />
         )}
       </div>
 
-      {/* MODAL */}
+      {/* ADD / EDIT MODAL */}
       {showModal && (
         <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-3xl p-8 w-full max-w-3xl shadow-2xl max-h-[92vh] overflow-y-auto">
+          <div className="bg-white rounded-3xl p-8 w-full max-w-2xl shadow-2xl max-h-[90vh] overflow-y-auto">
 
+            {/* Modal Header */}
             <div className="flex justify-between items-center mb-6">
               <h2 className="text-xl font-bold text-purple-900">
                 {isEditing ? "Edit Cash Advance" : "Add Cash Advance"}
               </h2>
               <button onClick={() => setShowModal(false)}
-                className="text-3xl text-gray-300 hover:text-red-400 transition leading-none">×</button>
+                className="text-3xl text-gray-400 hover:text-red-500 transition leading-none">×</button>
             </div>
 
             <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-2 gap-4">
 
-              {/* ── DV ── */}
-              <SectionLabel>DV Information</SectionLabel>
-              <Field label="Fund"      name="fund"       placeholder="e.g. 501LFP / 501 COB" />
-              <Field label="DV Date *" name="dv_date"    type="date" />
-              <Field label="DV Number *" name="dv_number" placeholder="e.g. 2026-01-0001" />
+              {/* === BASIC INFO === */}
+              <SectionLabel>Disbursement Details</SectionLabel>
 
-              {/* ── Officials ── */}
-              <SectionLabel>Officials</SectionLabel>
+              {/* Fund */}
+              <div className="flex flex-col gap-1">
+                <label className="text-xs font-semibold text-gray-600">Fund</label>
+                <input type="text" name="fund" placeholder="e.g. 501 COB"
+                  value={formData.fund} onChange={handleChange}
+                  className="border border-gray-200 p-3 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-purple-300" />
+              </div>
+
+              {/* Accountable Official */}
+              <div className="flex flex-col gap-1">
+                <label className="text-xs font-semibold text-gray-600">Accountable Official *</label>
+                <input type="text" name="accountable_official" placeholder="Full name"
+                  value={formData.accountable_official} onChange={handleChange} required
+                  className="border border-gray-200 p-3 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-purple-300" />
+              </div>
+
+              {/* DV Date */}
+              <div className="flex flex-col gap-1">
+                <label className="text-xs font-semibold text-gray-600">DV Date *</label>
+                <input type="date" name="dv_date" value={formData.dv_date}
+                  onChange={handleChange} required
+                  className="border border-gray-200 p-3 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-purple-300" />
+              </div>
+
+              {/* DV Number */}
+              <div className="flex flex-col gap-1">
+                <label className="text-xs font-semibold text-gray-600">DV Number *</label>
+                <input type="text" name="dv_number" placeholder="e.g. DV-2026-007"
+                  value={formData.dv_number} onChange={handleChange} required
+                  className="border border-gray-200 p-3 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-purple-300" />
+              </div>
+
+              {/* Bonded Official */}
               <div className="flex flex-col gap-1">
                 <label className="text-xs font-semibold text-gray-600">Bonded Official</label>
-                <select name="bonded_official_id" value={formData.bonded_official_id} onChange={handleChange}
-                  className="border border-gray-200 p-2.5 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-purple-300">
-                  <option value="">— Select —</option>
+                <select name="bonded_official_id" value={formData.bonded_official_id}
+                  onChange={handleChange}
+                  className="border border-gray-200 p-3 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-purple-300">
+                  <option value="">— Select bonded official —</option>
+                  <option value="NA">N/A (Not Applicable)</option>
                   {officials.map((o) => (
-                    <option key={o.id} value={o.id}
-                      disabled={!o.is_available && String(o.id) !== String(formData.bonded_official_id)}>
-                      {o.name}{!o.is_available ? " (Unavailable)" : ""}
+                    <option key={o.id} value={o.id} disabled={!o.is_available && String(o.id) !== String(formData.bonded_official_id)}>
+                      {o.name} {!o.is_available ? "(Unavailable)" : ""}
                     </option>
                   ))}
                 </select>
               </div>
-              <Field label="Accountable Officer *" name="accountable_official" placeholder="Full name" />
 
-              {/* ── Description ── */}
-              <SectionLabel>Description</SectionLabel>
-              <div className="md:col-span-2 flex flex-col gap-1">
+              {/* Conditional Custom Official Input */}
+              {formData.bonded_official_id === "NA" && (
+                <div className="flex flex-col gap-1">
+                  <label className="text-xs font-semibold text-gray-600">Specify Official Name (Optional)</label>
+                  <input 
+                    type="text" name="custom_official" placeholder="Enter official name..." 
+                    value={formData.custom_official} onChange={handleChange}
+                    className="border border-gray-200 p-3 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-purple-300" 
+                  />
+                </div>
+              )}
+
+              {/* Description */}
+              <div className="flex flex-col gap-1 md:col-span-2">
                 <label className="text-xs font-semibold text-gray-600">Description</label>
-                <textarea name="description" rows={2} value={formData.description} onChange={handleChange}
-                  placeholder="Purpose of the cash advance…"
-                  className="border border-gray-200 p-2.5 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-purple-300 resize-none" />
+                <input type="text" name="description" placeholder="Purpose of cash advance"
+                  value={formData.description} onChange={handleChange}
+                  className="border border-gray-200 p-3 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-purple-300" />
               </div>
 
-              {/* ── Check ── */}
-              <SectionLabel>Check (Cheque)</SectionLabel>
-              <Field label="Check Date"   name="check_date"   type="date" />
-              <Field label="Check Number" name="check_number" placeholder="e.g. 2262584" />
+              {/* === CHECKS === */}
+              <SectionLabel>Check Details</SectionLabel>
 
-              {/* ── Financials ── */}
+              <div className="flex flex-col gap-1">
+                <label className="text-xs font-semibold text-gray-600">Check Date</label>
+                <input type="date" name="check_date" value={formData.check_date} onChange={handleChange}
+                  className="border border-gray-200 p-3 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-purple-300" />
+              </div>
+
+              <div className="flex flex-col gap-1">
+                <label className="text-xs font-semibold text-gray-600">Check Number</label>
+                <input type="text" name="check_number" placeholder="Check number" value={formData.check_number} onChange={handleChange}
+                  className="border border-gray-200 p-3 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-purple-300" />
+              </div>
+
+              {/* === FINANCIALS === */}
               <SectionLabel>Financials</SectionLabel>
-              <Field label="Amount (₱) *" name="amount" type="number" placeholder="0.00" />
-              <Field label="Spent (₱)"    name="spent"  type="number" placeholder="0.00" />
-              <Field label="Refund (₱)"   name="refund" type="number" placeholder="0.00" />
 
-              {/* ── Collection Receipt ── */}
+              {/* Amount */}
+              <div className="flex flex-col gap-1">
+                <label className="text-xs font-semibold text-gray-600">Amount (₱) *</label>
+                <input type="number" name="amount" placeholder="0.00" step="0.01" min="0"
+                  value={formData.amount} onChange={handleChange} required
+                  className="border border-gray-200 p-3 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-purple-300" />
+              </div>
+
+              {/* Spent */}
+              <div className="flex flex-col gap-1">
+                <label className="text-xs font-semibold text-gray-600">Spent (₱)</label>
+                <input type="number" name="spent" placeholder="0.00" step="0.01" min="0"
+                  value={formData.spent} onChange={handleChange}
+                  className="border border-gray-200 p-3 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-purple-300" />
+              </div>
+
+              {/* Refund */}
+              <div className="flex flex-col gap-1">
+                <label className="text-xs font-semibold text-gray-600">Refund (₱)</label>
+                <input type="number" name="refund" placeholder="0.00" step="0.01" 
+                  value={formData.refund} readOnly
+                  className="border border-gray-200 p-3 rounded-xl text-sm bg-gray-100 text-gray-500 cursor-not-allowed focus:outline-none" />
+              </div>
+
+              {/* Reimbursement Checkbox */}
+              <div className="flex flex-col gap-1 justify-center">
+                <label className="flex items-center gap-2 cursor-pointer mt-4">
+                  <input 
+                    type="checkbox" 
+                    name="is_reimbursement" 
+                    checked={formData.is_reimbursement} 
+                    onChange={handleChange}
+                    className="w-5 h-5 text-purple-600 rounded border-gray-300 focus:ring-purple-400 cursor-pointer"
+                  />
+                  <span className="text-sm font-semibold text-gray-700">Reimbursement</span>
+                </label>
+              </div>
+
+              {/* === COLLECTION RECEIPT === */}
               <SectionLabel>Collection Receipt</SectionLabel>
-              <Field label="CR Date"   name="collection_receipt_date"   type="date" />
-              <Field label="CR Number" name="collection_receipt_number" placeholder="e.g. 40052" />
-              <Field label="Date Deposited" name="date_deposited" type="date" />
 
-              {/* ── Liquidation ── */}
+              <div className="flex flex-col gap-1">
+                <label className="text-xs font-semibold text-gray-600">CR Date</label>
+                <input type="date" name="collection_receipt_date" value={formData.collection_receipt_date} onChange={handleChange}
+                  className="border border-gray-200 p-3 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-purple-300" />
+              </div>
+
+              <div className="flex flex-col gap-1">
+                <label className="text-xs font-semibold text-gray-600">CR Number</label>
+                <input type="text" name="collection_receipt_number" placeholder="CR number" value={formData.collection_receipt_number} onChange={handleChange}
+                  className="border border-gray-200 p-3 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-purple-300" />
+              </div>
+
+              <div className="flex flex-col gap-1">
+                <label className="text-xs font-semibold text-gray-600">Date Deposited</label>
+                <input type="date" name="date_deposited" value={formData.date_deposited} onChange={handleChange}
+                  className="border border-gray-200 p-3 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-purple-300" />
+              </div>
+
+              {/* === LIQUIDATION === */}
               <SectionLabel>Liquidation</SectionLabel>
-              <Field label="Liquidated Date"          name="liquidated_date"           type="date" />
-              <Field label="BUR Number"               name="bur_number"                placeholder="e.g. 2026-03-00044" />
-              <Field label="Liquidation Report Number" name="liquidation_report_number" placeholder="e.g. 2026-03-0002LFP" />
 
-              {/* ── Completion ── */}
-              <SectionLabel>Status &amp; Completion</SectionLabel>
+              <div className="flex flex-col gap-1">
+                <label className="text-xs font-semibold text-gray-600">Liquidated Date</label>
+                <input type="date" name="liquidated_date" value={formData.liquidated_date} onChange={handleChange}
+                  className="border border-gray-200 p-3 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-purple-300" />
+              </div>
+
+              <div className="flex flex-col gap-1">
+                <label className="text-xs font-semibold text-gray-600">BUR Number</label>
+                <input type="text" name="bur_number" placeholder="BUR number" value={formData.bur_number} onChange={handleChange}
+                  className="border border-gray-200 p-3 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-purple-300" />
+              </div>
+
+              <div className="flex flex-col gap-1">
+                <label className="text-xs font-semibold text-gray-600">Liquidation Report No.</label>
+                <input type="text" name="liquidation_report_number" placeholder="Report number" value={formData.liquidation_report_number} onChange={handleChange}
+                  className="border border-gray-200 p-3 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-purple-300" />
+              </div>
+
+              {/* === STATUS & COA === */}
+              <SectionLabel>Status & Completion</SectionLabel>
+
+              {/* Status */}
               <div className="flex flex-col gap-1">
                 <label className="text-xs font-semibold text-gray-600">Status *</label>
                 <select name="status" value={formData.status} onChange={handleChange} required
-                  className="border border-gray-200 p-2.5 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-purple-300">
+                  className="border border-gray-200 p-3 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-purple-300">
                   <option value="">— Select status —</option>
                   <option value="Ongoing">Ongoing</option>
-                  <option value="Done">Done</option>
+                  <option value="Done">Completed</option>
                 </select>
               </div>
-              <Field label="Date Submitted to COA" name="date_submitted_to_coa" type="date" />
-              <div className="md:col-span-2 flex flex-col gap-1">
+
+              {/* Date Submitted to COA */}
+              <div className="flex flex-col gap-1">
+                <label className="text-xs font-semibold text-gray-600">Date Submitted to COA</label>
+                <input type="date" name="date_submitted_to_coa"
+                  value={formData.date_submitted_to_coa} onChange={handleChange}
+                  className="border border-gray-200 p-3 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-purple-300" />
+              </div>
+
+              {/* Remarks */}
+              <div className="flex flex-col gap-1 md:col-span-2">
                 <label className="text-xs font-semibold text-gray-600">Remarks</label>
-                <textarea name="remarks" rows={2} value={formData.remarks} onChange={handleChange}
-                  placeholder="Optional notes…"
-                  className="border border-gray-200 p-2.5 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-purple-300 resize-none" />
+                <textarea name="remarks" rows={2} placeholder="Optional notes…"
+                  value={formData.remarks} onChange={handleChange}
+                  className="border border-gray-200 p-3 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-purple-300 resize-none" />
               </div>
 
               {/* Buttons */}
-              <div className="md:col-span-2 flex gap-3 justify-end mt-2">
+              <div className="md:col-span-2 flex gap-3 justify-end mt-2 pt-4 border-t border-purple-100">
                 <button type="button" onClick={() => setShowModal(false)}
                   className="px-6 py-2.5 rounded-xl border border-gray-200 text-gray-600 hover:bg-gray-50 transition text-sm font-medium">
                   Cancel

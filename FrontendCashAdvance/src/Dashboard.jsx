@@ -1,4 +1,5 @@
 import { useEffect, useState, useCallback } from "react";
+import { useTheme } from "./context/ThemeContext";
 import axios from "axios";
 import {
   LineChart, Line, BarChart, Bar,
@@ -51,6 +52,7 @@ const EMPTY_FORM = {
 };
 
 export default function Dashboard() {
+  const { theme } = useTheme();
   const { searchQuery } = useSearch();
   const [data,      setData]      = useState([]);
   const [stats,     setStats]     = useState(null);
@@ -257,12 +259,20 @@ export default function Dashboard() {
       </div>
 
       {/* TABLE */}
-      <div className="bg-white rounded-3xl p-6 shadow-sm border border-purple-100 flex-1">
+      <div className={`bg-white rounded-3xl p-6 shadow-sm border flex-1 transition-colors ${
+        theme === 'green' ? 'border-[#86C99B]' : 'border-purple-100'
+      }`}>
         <div className="flex items-center justify-between mb-5">
-          <h2 className="text-lg font-bold text-purple-900">Cash Advance Records</h2>
+          <h2 className={`text-lg font-bold transition-colors ${
+            theme === 'green' ? 'text-[#128A42]' : 'text-purple-900'
+          }`}>
+            Cash Advance Records
+          </h2>
           <button
             onClick={openAdd}
-            className="bg-purple-600 hover:bg-purple-700 text-white px-5 py-2 rounded-xl shadow-md transition font-semibold text-sm"
+            className={`text-white px-5 py-2 rounded-xl shadow-md transition font-semibold text-sm ${
+              theme === 'green' ? 'bg-[#128A42] hover:bg-[#0C6B31]' : 'bg-purple-600 hover:bg-purple-700'
+            }`}
           >
             + Add Cash Advance
           </button>
@@ -270,7 +280,9 @@ export default function Dashboard() {
 
         {loading ? (
           <div className="text-center py-16 text-gray-400">
-            <div className="animate-spin w-8 h-8 border-4 border-purple-200 border-t-purple-600 rounded-full mx-auto mb-3" />
+            <div className={`animate-spin w-8 h-8 border-4 rounded-full mx-auto mb-3 ${
+              theme === 'green' ? 'border-[#E3F5E9] border-t-[#128A42]' : 'border-purple-200 border-t-purple-600'
+            }`} />
             Loading records…
           </div>
         ) : (

@@ -265,21 +265,9 @@ export default function Dashboard() {
               <YAxis tick={{ fontSize: 11 }} />
               <Tooltip formatter={(v) => fmt(v)} />
               <Legend />
-              <Bar 
-                dataKey="amount" 
-                fill={theme === 'green' ? '#C4E8D1' : '#d8b4fe'} 
-                radius={[4,4,0,0]} 
-              />
-              <Bar 
-                dataKey="spent"  
-                fill={theme === 'green' ? '#86C99B' : '#a855f7'} 
-                radius={[4,4,0,0]} 
-              />
-              <Bar 
-                dataKey="refund" 
-                fill={theme === 'green' ? '#128A42' : '#581c87'} 
-                radius={[4,4,0,0]} 
-              />
+              <Bar dataKey="amount" fill={theme === 'green' ? '#C4E8D1' : '#d8b4fe'} radius={[4,4,0,0]} />
+              <Bar dataKey="spent"  fill={theme === 'green' ? '#86C99B' : '#a855f7'} radius={[4,4,0,0]} />
+              <Bar dataKey="refund" fill={theme === 'green' ? '#128A42' : '#581c87'} radius={[4,4,0,0]} />
             </BarChart>
           </ResponsiveContainer>
         </div>
@@ -347,20 +335,20 @@ export default function Dashboard() {
                 <label className="text-xs font-semibold text-gray-600">Fund</label>
                 <input type="text" name="fund" placeholder="e.g. 501 COB"
                   value={formData.fund} onChange={handleChange}
-                  className={`border border-gray-200 p-3 rounded-xl text-sm focus:outline-none focus:ring-2 ${inputFocusRing}`} />
+                  className={`border border-gray-200 p-3 rounded-xl text-sm focus:outline-none focus:ring-2 transition-colors ${inputFocusRing}`} />
               </div>
 
               <div className="flex flex-col gap-1">
                 <label className="text-xs font-semibold text-gray-600">Accountable Official *</label>
                 <input type="text" name="accountable_official" placeholder="Full name"
                   value={formData.accountable_official} onChange={handleChange} required
-                  className={`border border-gray-200 p-3 rounded-xl text-sm focus:outline-none focus:ring-2 ${inputFocusRing}`} />
+                  className={`border border-gray-200 p-3 rounded-xl text-sm focus:outline-none focus:ring-2 transition-colors ${inputFocusRing}`} />
               </div>
 
               <div className="flex flex-col gap-1">
                 <label className="text-xs font-semibold text-gray-600">Bonded Official</label>
                 <select name="bonded_official_id" value={formData.bonded_official_id} onChange={handleChange}
-                  className={`border border-gray-200 p-3 rounded-xl text-sm focus:outline-none focus:ring-2 ${inputFocusRing}`}>
+                  className={`border border-gray-200 p-3 rounded-xl text-sm focus:outline-none focus:ring-2 transition-colors ${inputFocusRing}`}>
                   <option value="">— Select bonded official —</option>
                   <option value="NA">N/A (Not Applicable)</option>
                   {officials.map((o) => (
@@ -377,7 +365,7 @@ export default function Dashboard() {
                   <label className="text-xs font-semibold text-gray-600">Specify Official Name (Optional)</label>
                   <input type="text" name="custom_official" placeholder="Enter official name..."
                     value={formData.custom_official} onChange={handleChange}
-                    className={`border border-gray-200 p-3 rounded-xl text-sm focus:outline-none focus:ring-2 ${inputFocusRing}`} />
+                    className={`border border-gray-200 p-3 rounded-xl text-sm focus:outline-none focus:ring-2 transition-colors ${inputFocusRing}`} />
                 </div>
               )}
 
@@ -385,7 +373,7 @@ export default function Dashboard() {
                 <label className="text-xs font-semibold text-gray-600">Description</label>
                 <input type="text" name="description" placeholder="Purpose of cash advance"
                   value={formData.description} onChange={handleChange}
-                  className={`border border-gray-200 p-3 rounded-xl text-sm focus:outline-none focus:ring-2 ${inputFocusRing}`} />
+                  className={`border border-gray-200 p-3 rounded-xl text-sm focus:outline-none focus:ring-2 transition-colors ${inputFocusRing}`} />
               </div>
 
               {/* ── FINANCIALS ── */}
@@ -395,14 +383,14 @@ export default function Dashboard() {
                 <label className="text-xs font-semibold text-gray-600">Amount (₱) *</label>
                 <input type="number" name="amount" placeholder="0.00" step="0.01" min="0"
                   value={formData.amount} onChange={handleChange} required
-                  className={`border border-gray-200 p-3 rounded-xl text-sm focus:outline-none focus:ring-2 ${inputFocusRing}`} />
+                  className={`border border-gray-200 p-3 rounded-xl text-sm focus:outline-none focus:ring-2 transition-colors ${inputFocusRing}`} />
               </div>
 
               <div className="flex flex-col gap-1">
                 <label className="text-xs font-semibold text-gray-600">Spent (₱)</label>
                 <input type="number" name="spent" placeholder="0.00" step="0.01" min="0"
                   value={formData.spent} onChange={handleChange}
-                  className={`border border-gray-200 p-3 rounded-xl text-sm focus:outline-none focus:ring-2 ${inputFocusRing}`} />
+                  className={`border border-gray-200 p-3 rounded-xl text-sm focus:outline-none focus:ring-2 transition-colors ${inputFocusRing}`} />
               </div>
 
               {/* ── REIMBURSEMENT DETAILS ── */}
@@ -412,26 +400,26 @@ export default function Dashboard() {
                 <label className="text-xs font-semibold text-gray-600">Disbursement Date</label>
                 <input type="date" name="dv_date" value={formData.dv_date}
                   onChange={handleChange} 
-                  className={`border border-gray-200 p-3 rounded-xl text-sm focus:outline-none focus:ring-2 ${inputFocusRing}`} />
+                  className={`border border-gray-200 p-3 rounded-xl text-sm focus:outline-none focus:ring-2 transition-colors ${inputFocusRing}`} />
               </div>
 
               <div className="flex flex-col gap-1">
                 <label className="text-xs font-semibold text-gray-600">Disbursement Number</label>
                 <input type="text" name="dv_number" placeholder="e.g. 2026-01-0001"
                   value={formData.dv_number} onChange={handleChange} 
-                  className={`border border-gray-200 p-3 rounded-xl text-sm focus:outline-none focus:ring-2 ${inputFocusRing}`} />
+                  className={`border border-gray-200 p-3 rounded-xl text-sm focus:outline-none focus:ring-2 transition-colors ${inputFocusRing}`} />
               </div>
 
               <div className="flex flex-col gap-1">
                 <label className="text-xs font-semibold text-gray-600">Check Date</label>
                 <input type="date" name="check_date" value={formData.check_date} onChange={handleChange}
-                  className={`border border-gray-200 p-3 rounded-xl text-sm focus:outline-none focus:ring-2 ${inputFocusRing}`} />
+                  className={`border border-gray-200 p-3 rounded-xl text-sm focus:outline-none focus:ring-2 transition-colors ${inputFocusRing}`} />
               </div>
 
               <div className="flex flex-col gap-1">
                 <label className="text-xs font-semibold text-gray-600">Check Number</label>
                 <input type="text" name="check_number" placeholder="Check number" value={formData.check_number} onChange={handleChange}
-                  className={`border border-gray-200 p-3 rounded-xl text-sm focus:outline-none focus:ring-2 ${inputFocusRing}`} />
+                  className={`border border-gray-200 p-3 rounded-xl text-sm focus:outline-none focus:ring-2 transition-colors ${inputFocusRing}`} />
               </div>
 
               {/* ── REFUND DETAILS ── */}
@@ -440,13 +428,13 @@ export default function Dashboard() {
               <div className="flex flex-col gap-1">
                 <label className="text-xs font-semibold text-gray-600">CR Date</label>
                 <input type="date" name="collection_receipt_date" value={formData.collection_receipt_date} onChange={handleChange}
-                  className={`border border-gray-200 p-3 rounded-xl text-sm focus:outline-none focus:ring-2 ${inputFocusRing}`} />
+                  className={`border border-gray-200 p-3 rounded-xl text-sm focus:outline-none focus:ring-2 transition-colors ${inputFocusRing}`} />
               </div>
 
               <div className="flex flex-col gap-1">
                 <label className="text-xs font-semibold text-gray-600">CR Number</label>
                 <input type="text" name="collection_receipt_number" placeholder="CR number" value={formData.collection_receipt_number} onChange={handleChange}
-                  className={`border border-gray-200 p-3 rounded-xl text-sm focus:outline-none focus:ring-2 ${inputFocusRing}`} />
+                  className={`border border-gray-200 p-3 rounded-xl text-sm focus:outline-none focus:ring-2 transition-colors ${inputFocusRing}`} />
               </div>
 
               <div className="flex flex-col gap-1">
@@ -459,7 +447,7 @@ export default function Dashboard() {
               <div className="flex flex-col gap-1">
                 <label className="text-xs font-semibold text-gray-600">Date Deposited</label>
                 <input type="date" name="date_deposited" value={formData.date_deposited} onChange={handleChange}
-                  className={`border border-gray-200 p-3 rounded-xl text-sm focus:outline-none focus:ring-2 ${inputFocusRing}`} />
+                  className={`border border-gray-200 p-3 rounded-xl text-sm focus:outline-none focus:ring-2 transition-colors ${inputFocusRing}`} />
               </div>
 
               {/* ── LIQUIDATION ── */}
@@ -468,19 +456,19 @@ export default function Dashboard() {
               <div className="flex flex-col gap-1">
                 <label className="text-xs font-semibold text-gray-600">Liquidated Date</label>
                 <input type="date" name="liquidated_date" value={formData.liquidated_date} onChange={handleChange}
-                  className={`border border-gray-200 p-3 rounded-xl text-sm focus:outline-none focus:ring-2 ${inputFocusRing}`} />
+                  className={`border border-gray-200 p-3 rounded-xl text-sm focus:outline-none focus:ring-2 transition-colors ${inputFocusRing}`} />
               </div>
 
               <div className="flex flex-col gap-1">
                 <label className="text-xs font-semibold text-gray-600">BUR Number</label>
                 <input type="text" name="bur_number" placeholder="BUR number" value={formData.bur_number} onChange={handleChange}
-                  className={`border border-gray-200 p-3 rounded-xl text-sm focus:outline-none focus:ring-2 ${inputFocusRing}`} />
+                  className={`border border-gray-200 p-3 rounded-xl text-sm focus:outline-none focus:ring-2 transition-colors ${inputFocusRing}`} />
               </div>
 
               <div className="flex flex-col gap-1">
                 <label className="text-xs font-semibold text-gray-600">Liquidation Report No.</label>
                 <input type="text" name="liquidation_report_number" placeholder="Report number" value={formData.liquidation_report_number} onChange={handleChange}
-                  className={`border border-gray-200 p-3 rounded-xl text-sm focus:outline-none focus:ring-2 ${inputFocusRing}`} />
+                  className={`border border-gray-200 p-3 rounded-xl text-sm focus:outline-none focus:ring-2 transition-colors ${inputFocusRing}`} />
               </div>
 
               {/* ── STATUS & COMPLETION ── */}
@@ -489,7 +477,7 @@ export default function Dashboard() {
               <div className="flex flex-col gap-1">
                 <label className="text-xs font-semibold text-gray-600">Status *</label>
                 <select name="status" value={formData.status} onChange={handleChange} required
-                  className={`border border-gray-200 p-3 rounded-xl text-sm focus:outline-none focus:ring-2 ${inputFocusRing}`}>
+                  className={`border border-gray-200 p-3 rounded-xl text-sm focus:outline-none focus:ring-2 transition-colors ${inputFocusRing}`}>
                   <option value="">— Select status —</option>
                   <option value="Ongoing">Ongoing</option>
                   <option value="Done">Completed</option>
@@ -500,14 +488,14 @@ export default function Dashboard() {
                 <label className="text-xs font-semibold text-gray-600">Date Submitted to COA</label>
                 <input type="date" name="date_submitted_to_coa"
                   value={formData.date_submitted_to_coa} onChange={handleChange}
-                  className={`border border-gray-200 p-3 rounded-xl text-sm focus:outline-none focus:ring-2 ${inputFocusRing}`} />
+                  className={`border border-gray-200 p-3 rounded-xl text-sm focus:outline-none focus:ring-2 transition-colors ${inputFocusRing}`} />
               </div>
 
               <div className="flex flex-col gap-1 md:col-span-2">
                 <label className="text-xs font-semibold text-gray-600">Remarks</label>
                 <textarea name="remarks" rows={2} placeholder="Optional notes…"
                   value={formData.remarks} onChange={handleChange}
-                  className={`border border-gray-200 p-3 rounded-xl text-sm focus:outline-none focus:ring-2 resize-none ${inputFocusRing}`} />
+                  className={`border border-gray-200 p-3 rounded-xl text-sm focus:outline-none focus:ring-2 resize-none transition-colors ${inputFocusRing}`} />
               </div>
 
               <div className={`md:col-span-2 flex gap-3 justify-end mt-2 pt-4 border-t transition-colors ${

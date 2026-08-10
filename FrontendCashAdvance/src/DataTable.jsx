@@ -23,8 +23,8 @@ const isPDF = (filename) => /\.(pdf)$/i.test(filename);
 export default function DataTable({ data, handleDelete, handleEdit, handleFileUpload, handleFileDelete }) {
   const { theme } = useTheme();
   const [page,            setPage]            = useState(1);
-  const [pendingId,       setPendingId]       = useState(null); 
-  const [uploadingId,     setUploadingId]     = useState(null); 
+  const [pendingId,       setPendingId]       = useState(null); // which row's upload is pending
+  const [uploadingId,     setUploadingId]     = useState(null); // which row is currently uploading
   const [viewFile,        setViewFile]        = useState(null); 
   const [isDownloading,   setIsDownloading]   = useState(false); // Track download state
   const fileInputRef = useRef(null);

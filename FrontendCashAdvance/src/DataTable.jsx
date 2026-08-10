@@ -16,15 +16,6 @@ const shortName = (fp) => {
   return name.length > 20 ? name.slice(0, 18) + "…" : name;
 };
 
-<<<<<<< HEAD
-export default function DataTable({ data, handleDelete, handleEdit, handleFileUpload, handleFileDelete }) {
-  const { theme } = useTheme();
-  const [page,            setPage]            = useState(1);
-  const [pendingId,       setPendingId]       = useState(null); // which row's upload is pending
-  const [uploadingId,     setUploadingId]     = useState(null); // which row is currently uploading
-  const fileInputRef = useRef(null);
-
-=======
 // Check file types for the preview modal
 const isImage = (filename) => /\.(jpg|jpeg|png|gif|webp)$/i.test(filename);
 const isPDF = (filename) => /\.(pdf)$/i.test(filename);
@@ -39,7 +30,6 @@ export default function DataTable({ data, handleDelete, handleEdit, handleFileUp
   const fileInputRef = useRef(null);
 
   // Theme Variables
->>>>>>> 2507752b1107e69d65bd82b3b1638776fa810b3e
   const borderColor  = theme === "green" ? "border-[#0C6B31]"  : "border-purple-300";
   const borderColor2 = theme === "green" ? "border-[#86C99B]"  : "border-purple-200";
   const headBg       = theme === "green" ? "#128A42"           : "#C9A0DC";
@@ -66,11 +56,7 @@ export default function DataTable({ data, handleDelete, handleEdit, handleFileUp
   const totalPages = Math.ceil(data.length / PAGE_SIZE);
   const paginated  = data.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
 
-<<<<<<< HEAD
-  // File upload handlers
-=======
   // ── File upload handlers ─────────────────────────────────
->>>>>>> 2507752b1107e69d65bd82b3b1638776fa810b3e
   const triggerFileInput = (id) => {
     setPendingId(id);
     fileInputRef.current?.click();
@@ -93,8 +79,6 @@ export default function DataTable({ data, handleDelete, handleEdit, handleFileUp
     await handleFileDelete(id);
   };
 
-<<<<<<< HEAD
-=======
   // ── Force Download Handler ───────────────────────────────
   const handleDownload = async (filename) => {
     setIsDownloading(true);
@@ -119,7 +103,6 @@ export default function DataTable({ data, handleDelete, handleEdit, handleFileUp
     }
   };
 
->>>>>>> 2507752b1107e69d65bd82b3b1638776fa810b3e
   const hasFileActions = handleFileUpload || handleFileDelete;
   const hasActions     = handleEdit || handleDelete;
 
@@ -140,7 +123,6 @@ export default function DataTable({ data, handleDelete, handleEdit, handleFileUp
       } ${scrollbar}`}>
         <table className="text-xs text-left" style={{ minWidth: "2450px" }}>
           <thead>
-<<<<<<< HEAD
             {/* ── Top-level group headers (Row 1) ── */}
             <tr style={{ background: headBg }} className="text-white font-bold text-center transition-colors duration-300">
               <th className={`px-3 py-2 border ${borderColor}`} rowSpan={3}>Fund</th>
@@ -148,10 +130,7 @@ export default function DataTable({ data, handleDelete, handleEdit, handleFileUp
               <th className={`px-3 py-2 border ${borderColor}`} rowSpan={3}>Description</th>
               <th className={`px-3 py-2 border ${borderColor}`} colSpan={2} rowSpan={2}>Financials</th>
               <th className={`px-3 py-2 border ${borderColor}`} colSpan={4}>Reimbursement</th>
-              
-              {/* NEW REFUND HEADER MOVED HERE */}
               <th className={`px-3 py-2 border ${borderColor}`} colSpan={4}>Refund</th>
-              
               <th className={`px-3 py-2 border ${borderColor}`} colSpan={3} rowSpan={2}>Liquidated</th>
               <th className={`px-3 py-2 border ${borderColor}`} colSpan={2} rowSpan={2}>Status</th>
               {hasFileActions && (
@@ -184,39 +163,6 @@ export default function DataTable({ data, handleDelete, handleEdit, handleFileUp
                 "Status", "Date Submitted to COA",
               ].map((h, idx) => (
                 <th key={idx} className={`px-3 py-2 border whitespace-nowrap ${borderColor2}`}>{h}</th>
-=======
-            {/* ── Group headers ── */}
-            <tr style={{ background: headBg }} className="text-white font-bold text-center transition-colors duration-300">
-              <th className={`px-3 py-2 border ${borderColor}`} colSpan={3}>DV</th>
-              <th className={`px-3 py-2 border ${borderColor}`} colSpan={2}>Officials</th>
-              <th className={`px-3 py-2 border ${borderColor}`} rowSpan={2}>Description</th>
-              <th className={`px-3 py-2 border ${borderColor}`} colSpan={2}>Check</th>
-              <th className={`px-3 py-2 border ${borderColor}`} colSpan={3}>Financials</th>
-              <th className={`px-3 py-2 border ${borderColor}`} rowSpan={2}>Reimbursement</th>
-              <th className={`px-3 py-2 border ${borderColor}`} colSpan={3}>Collection Receipt</th>
-              <th className={`px-3 py-2 border ${borderColor}`} colSpan={3}>Liquidated</th>
-              <th className={`px-3 py-2 border ${borderColor}`} colSpan={2}>Status</th>
-              {hasFileActions && (
-                <th className={`px-3 py-2 border ${borderColor}`} rowSpan={2}>📎 Attachment</th>
-              )}
-              {hasActions && (
-                <th className={`px-3 py-2 border ${borderColor}`} rowSpan={2}>Actions</th>
-              )}
-            </tr>
-
-            {/* ── Column headers ── */}
-            <tr style={{ background: subHeadBg }} className={`${subHeadText} font-bold transition-colors duration-300`}>
-              {[
-                "Fund","DV Date","DV Number",
-                "Bonded Official","Responsible Officer",
-                "Check Date","Check Number",
-                "Amount","Spent","Refund",
-                "CR Date","CR Number","Date Deposited",
-                "Liquidated Date","BUR Number","Liquidation Report No.",
-                "Status","Date Submitted to COA",
-              ].map((h) => (
-                <th key={h} className={`px-3 py-2 border whitespace-nowrap ${borderColor2}`}>{h}</th>
->>>>>>> 2507752b1107e69d65bd82b3b1638776fa810b3e
               ))}
             </tr>
           </thead>
@@ -226,16 +172,8 @@ export default function DataTable({ data, handleDelete, handleEdit, handleFileUp
               <tr key={item.id} className={`transition-colors ${hoverBg}`}>
                 {/* Fund */}
                 <td className="px-3 py-3 border-r border-gray-100">{item.fund || "—"}</td>
-<<<<<<< HEAD
                 
                 {/* ── OFFICIALS ── */}
-=======
-                {/* DV Date */}
-                <td className="px-3 py-3 border-r border-gray-100 whitespace-nowrap">{fmtDate(item.dv_date)}</td>
-                {/* DV Number */}
-                <td className={`px-3 py-3 border-r border-gray-100 font-semibold whitespace-nowrap ${dvText}`}>{item.dv_number}</td>
-                {/* Bonded Official */}
->>>>>>> 2507752b1107e69d65bd82b3b1638776fa810b3e
                 <td className="px-3 py-3 border-r border-gray-100 whitespace-nowrap">{item.bonded_official_name || "N/A"}</td>
                 <td className="px-3 py-3 border-r border-gray-100 whitespace-nowrap">{item.accountable_official || "—"}</td>
                 
@@ -243,19 +181,10 @@ export default function DataTable({ data, handleDelete, handleEdit, handleFileUp
                 <td className="px-3 py-3 border-r border-gray-100 max-w-[220px]">
                   <div className="truncate" title={item.description || ""}>{item.description || "—"}</div>
                 </td>
-<<<<<<< HEAD
                 
                 {/* ── FINANCIALS ── */}
-=======
-                {/* Check Date */}
-                <td className="px-3 py-3 border-r border-gray-100 whitespace-nowrap">{fmtDate(item.check_date)}</td>
-                {/* Check Number */}
-                <td className="px-3 py-3 border-r border-gray-100">{item.check_number || "—"}</td>
-                {/* Amount */}
->>>>>>> 2507752b1107e69d65bd82b3b1638776fa810b3e
                 <td className="px-3 py-3 border-r border-gray-100 font-semibold text-green-700 whitespace-nowrap">{fmtMoney(item.amount)}</td>
                 <td className="px-3 py-3 border-r border-gray-100 whitespace-nowrap">{fmtMoney(item.spent)}</td>
-<<<<<<< HEAD
 
                 {/* ── REIMBURSEMENT ── */}
                 <td className="px-3 py-3 border-r border-gray-100 whitespace-nowrap">{fmtDate(item.dv_date)}</td>
@@ -264,18 +193,6 @@ export default function DataTable({ data, handleDelete, handleEdit, handleFileUp
                 <td className="px-3 py-3 border-r border-gray-100">{item.check_number || "—"}</td>
                 
                 {/* ── REFUND ── */}
-=======
-                {/* Refund */}
-                <td className={`px-3 py-3 border-r border-gray-100 font-semibold whitespace-nowrap ${Number(item.refund || 0) > 0 ? "text-red-500" : ""}`}>
-                  {fmtMoney(item.refund)}
-                </td>
-                {/* Reimbursement */}
-                <td className="px-3 py-3 border-r border-gray-100 text-center">
-                  <input type="checkbox" checked={item.is_reimbursement ? true : false} readOnly
-                    className={`w-4 h-4 rounded border-gray-300 ${theme === "green" ? "text-[#128A42]" : "text-purple-600"}`} />
-                </td>
-                {/* CR Date */}
->>>>>>> 2507752b1107e69d65bd82b3b1638776fa810b3e
                 <td className="px-3 py-3 border-r border-gray-100 whitespace-nowrap">{fmtDate(item.collection_receipt_date)}</td>
                 <td className="px-3 py-3 border-r border-gray-100">{item.collection_receipt_number || "N/A"}</td>
                 <td className={`px-3 py-3 border-r border-gray-100 font-semibold whitespace-nowrap ${Number(item.refund || 0) > 0 ? "text-red-500" : ""}`}>
@@ -286,10 +203,6 @@ export default function DataTable({ data, handleDelete, handleEdit, handleFileUp
                 {/* ── LIQUIDATED ── */}
                 <td className="px-3 py-3 border-r border-gray-100 whitespace-nowrap">{fmtDate(item.liquidated_date)}</td>
                 <td className="px-3 py-3 border-r border-gray-100">{item.bur_number || "—"}</td>
-<<<<<<< HEAD
-=======
-                {/* Liquidation Report No. */}
->>>>>>> 2507752b1107e69d65bd82b3b1638776fa810b3e
                 <td className="px-3 py-3 border-r border-gray-100 whitespace-nowrap">{item.liquidation_report_number || "—"}</td>
                 
                 {/* ── STATUS ── */}
@@ -307,17 +220,6 @@ export default function DataTable({ data, handleDelete, handleEdit, handleFileUp
                   <td className="px-3 py-3 border-r border-gray-100 min-w-[160px]">
                     {item.file_path ? (
                       <div className="flex flex-col gap-1.5">
-<<<<<<< HEAD
-                        <a
-                          href={`http://localhost:3000/uploads/${item.file_path}`}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          title={item.file_path.replace(/^\d+-/, "")}
-                          className="flex items-center gap-1 bg-blue-50 hover:bg-blue-100 text-blue-700 px-2 py-1.5 rounded-lg text-xs font-semibold transition"
-                        >
-                          📄 <span className="truncate max-w-[100px]">{shortName(item.file_path)}</span>
-                        </a>
-=======
                         <button
                           onClick={() => setViewFile(item.file_path)}
                           title={item.file_path.replace(/^\d+-/, "")}
@@ -325,7 +227,6 @@ export default function DataTable({ data, handleDelete, handleEdit, handleFileUp
                         >
                           📄 <span className="truncate max-w-[100px]">{shortName(item.file_path)}</span>
                         </button>
->>>>>>> 2507752b1107e69d65bd82b3b1638776fa810b3e
                         {handleFileDelete && (
                           <button
                             onClick={() => onFileDelete(item.id)}

@@ -398,14 +398,8 @@ app.get("/audit_logs", async (req, res) => {
   } catch (e) { res.status(500).json({ message: e.message }); }
 });
 
-<<<<<<< HEAD
-
-// =====================================================
-// FILE UPLOAD ROUTE
-=======
 // =====================================================
 // FILE UPLOAD ROUTES
->>>>>>> 2507752b1107e69d65bd82b3b1638776fa810b3e
 // =====================================================
 
 // POST /api/cash_advance_dashboard/:id/upload
@@ -486,9 +480,5 @@ app.delete("/api/cash_advance_dashboard/:id/file", async (req, res) => {
   }
 });
 
-<<<<<<< HEAD
-=======
-
->>>>>>> 2507752b1107e69d65bd82b3b1638776fa810b3e
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => console.log(`🚀 Server → http://localhost:${PORT}`));

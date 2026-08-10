@@ -22,32 +22,11 @@ function Toast({ toast }) {
   );
 }
 
-<<<<<<< HEAD
-function StatCard({ label, value, sub, color }) {
-  return (
-    <div className="bg-white rounded-2xl p-5 shadow-sm border border-purple-100 flex flex-col gap-1">
-      <p className="text-xs font-semibold uppercase tracking-wider" style={{ color }}>{label}</p>
-      <p className="text-2xl font-bold text-gray-900">{value}</p>
-      {sub && <p className="text-xs text-gray-400">{sub}</p>}
-    </div>
-  );
-}
-
-function SectionLabel({ children }) {
-  return (
-    <div className="md:col-span-2 mt-2">
-      <p className="text-xs font-bold uppercase tracking-wider text-purple-700 border-b border-purple-100 pb-1">{children}</p>
-    </div>
-  );
-}
-
-=======
->>>>>>> 2507752b1107e69d65bd82b3b1638776fa810b3e
 const EMPTY_FORM = {
   fund: "", dv_date: "", dv_number: "",
   bonded_official_id: "", accountable_official: "", custom_official: "", description: "",
   check_date: "", check_number: "",
-  amount: "", spent: "", refund: "",
+  amount: "", spent: "", refund: "", is_reimbursement: false,
   collection_receipt_date: "", collection_receipt_number: "", date_deposited: "",
   liquidated_date: "", bur_number: "", liquidation_report_number: "",
   status: "", remarks: "", date_submitted_to_coa: "",
@@ -56,8 +35,8 @@ const EMPTY_FORM = {
 export default function Dashboard() {
   const { theme } = useTheme();
   const { searchQuery } = useSearch();
-  const [data,       setData]       = useState([]);
-  const [stats,      setStats]      = useState(null);
+  const [data,      setData]      = useState([]);
+  const [stats,     setStats]     = useState(null);
   const [officials, setOfficials] = useState([]);
   const [loading,   setLoading]   = useState(true);
   const [showModal, setShowModal] = useState(false);
@@ -75,8 +54,6 @@ export default function Dashboard() {
     setTimeout(() => setToast(null), 3000);
   };
 
-<<<<<<< HEAD
-=======
   // ── Dynamic Sub-Components ───────────────────────────────
   const StatCard = ({ label, value, sub, color }) => (
     <div className={`bg-white rounded-2xl p-5 shadow-sm border flex flex-col gap-1 transition-colors ${
@@ -98,7 +75,6 @@ export default function Dashboard() {
 
   const inputFocusRing = theme === 'green' ? 'focus:ring-[#86C99B]' : 'focus:ring-purple-300';
 
->>>>>>> 2507752b1107e69d65bd82b3b1638776fa810b3e
   // ── Fetch ────────────────────────────────────────────────
   const fetchData = useCallback(async () => {
     try {
@@ -152,29 +128,6 @@ export default function Dashboard() {
   const openEdit = (item) => {
     setIsEditing(true); setEditId(item.id);
     setFormData({
-<<<<<<< HEAD
-      fund:                       item.fund                             || "",
-      dv_date:                    item.dv_date?.split("T")[0]           || "",
-      dv_number:                  item.dv_number                        || "",
-      accountable_official:       item.accountable_official             || "",
-      bonded_official_id:         item.bonded_official_id               || "",
-      custom_official:            "",
-      description:                item.description                      || "",
-      check_date:                 item.check_date?.split("T")[0]        || "",
-      check_number:               item.check_number                     || "",
-      amount:                     item.amount                           || "",
-      spent:                      item.spent                            || "",
-      refund:                     item.refund                           || "",
-      collection_receipt_date:    item.collection_receipt_date?.split("T")[0]   || "",
-      collection_receipt_number:  item.collection_receipt_number        || "",
-      date_deposited:             item.date_deposited?.split("T")[0]    || "",
-      liquidated_date:            item.liquidated_date?.split("T")[0]   || "",
-      bur_number:                 item.bur_number                       || "",
-      liquidation_report_number:  item.liquidation_report_number        || "",
-      status:                     item.status                           || "",
-      remarks:                    item.remarks                          || "",
-      date_submitted_to_coa:      item.date_submitted_to_coa?.split("T")[0] || "",
-=======
       fund:                      item.fund                              || "",
       dv_date:                   item.dv_date?.split("T")[0]           || "",
       dv_number:                 item.dv_number                        || "",
@@ -197,7 +150,6 @@ export default function Dashboard() {
       status:                    item.status                           || "",
       remarks:                   item.remarks                          || "",
       date_submitted_to_coa:     item.date_submitted_to_coa?.split("T")[0] || "",
->>>>>>> 2507752b1107e69d65bd82b3b1638776fa810b3e
     });
     setShowModal(true);
   };
@@ -233,11 +185,7 @@ export default function Dashboard() {
     }
   };
 
-<<<<<<< HEAD
-  // File upload / delete handlers 
-=======
   // ── File upload / delete handlers ─────────────────────────
->>>>>>> 2507752b1107e69d65bd82b3b1638776fa810b3e
   const handleFileUpload = async (id, file) => {
     const form = new FormData();
     form.append("file", file);
@@ -263,11 +211,7 @@ export default function Dashboard() {
     }
   };
 
-<<<<<<< HEAD
-  // Chart data
-=======
   // ── Chart data ───────────────────────────────────────────
->>>>>>> 2507752b1107e69d65bd82b3b1638776fa810b3e
   const fmt = (n) => "₱" + Number(n || 0).toLocaleString("en-PH", { minimumFractionDigits: 2 });
   const chartData = [...data].reverse().slice(0, 6).map((d) => ({
     name:   d.dv_number,
@@ -276,11 +220,7 @@ export default function Dashboard() {
     refund: Number(d.refund || 0),
   }));
 
-<<<<<<< HEAD
-  // Render
-=======
   // ── Render ───────────────────────────────────────────────
->>>>>>> 2507752b1107e69d65bd82b3b1638776fa810b3e
   return (
     <div className="flex flex-col gap-6 min-h-full">
       <Toast toast={toast} />
@@ -401,12 +341,7 @@ export default function Dashboard() {
 
             <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-2 gap-4">
 
-<<<<<<< HEAD
-              {/* ── GENERAL DETAILS ── */}
-              <SectionLabel>General Details</SectionLabel>
-=======
               <SectionLabel>Disbursement Details</SectionLabel>
->>>>>>> 2507752b1107e69d65bd82b3b1638776fa810b3e
 
               <div className="flex flex-col gap-1">
                 <label className="text-xs font-semibold text-gray-600">Fund</label>
@@ -422,12 +357,6 @@ export default function Dashboard() {
                   className={`border border-gray-200 p-3 rounded-xl text-sm focus:outline-none focus:ring-2 ${inputFocusRing}`} />
               </div>
 
-<<<<<<< HEAD
-              <div className="flex flex-col gap-1">
-                <label className="text-xs font-semibold text-gray-600">Bonded Official</label>
-                <select name="bonded_official_id" value={formData.bonded_official_id} onChange={handleChange}
-                  className="border border-gray-200 p-3 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-purple-300">
-=======
               <div className="flex flex-col gap-1">
                 <label className="text-xs font-semibold text-gray-600">DV Date *</label>
                 <input type="date" name="dv_date" value={formData.dv_date}
@@ -446,7 +375,6 @@ export default function Dashboard() {
                 <label className="text-xs font-semibold text-gray-600">Bonded Official</label>
                 <select name="bonded_official_id" value={formData.bonded_official_id} onChange={handleChange}
                   className={`border border-gray-200 p-3 rounded-xl text-sm focus:outline-none focus:ring-2 ${inputFocusRing}`}>
->>>>>>> 2507752b1107e69d65bd82b3b1638776fa810b3e
                   <option value="">— Select bonded official —</option>
                   <option value="NA">N/A (Not Applicable)</option>
                   {officials.map((o) => (
@@ -463,11 +391,7 @@ export default function Dashboard() {
                   <label className="text-xs font-semibold text-gray-600">Specify Official Name (Optional)</label>
                   <input type="text" name="custom_official" placeholder="Enter official name..."
                     value={formData.custom_official} onChange={handleChange}
-<<<<<<< HEAD
-                    className="border border-gray-200 p-3 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-purple-300" />
-=======
                     className={`border border-gray-200 p-3 rounded-xl text-sm focus:outline-none focus:ring-2 ${inputFocusRing}`} />
->>>>>>> 2507752b1107e69d65bd82b3b1638776fa810b3e
                 </div>
               )}
 
@@ -478,43 +402,7 @@ export default function Dashboard() {
                   className={`border border-gray-200 p-3 rounded-xl text-sm focus:outline-none focus:ring-2 ${inputFocusRing}`} />
               </div>
 
-<<<<<<< HEAD
-              {/* ── FINANCIALS ── */}
-              <SectionLabel>Financials</SectionLabel>
-
-              <div className="flex flex-col gap-1">
-                <label className="text-xs font-semibold text-gray-600">Amount (₱) *</label>
-                <input type="number" name="amount" placeholder="0.00" step="0.01" min="0"
-                  value={formData.amount} onChange={handleChange} required
-                  className="border border-gray-200 p-3 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-purple-300" />
-              </div>
-
-              <div className="flex flex-col gap-1">
-                <label className="text-xs font-semibold text-gray-600">Spent (₱)</label>
-                <input type="number" name="spent" placeholder="0.00" step="0.01" min="0"
-                  value={formData.spent} onChange={handleChange}
-                  className="border border-gray-200 p-3 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-purple-300" />
-              </div>
-
-              {/* ── REIMBURSEMENT DETAILS ── */}
-              <SectionLabel>Reimbursement Details</SectionLabel>
-
-              <div className="flex flex-col gap-1">
-                <label className="text-xs font-semibold text-gray-600">Disbursement Date *</label>
-                <input type="date" name="dv_date" value={formData.dv_date}
-                  onChange={handleChange} required
-                  className="border border-gray-200 p-3 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-purple-300" />
-              </div>
-
-              <div className="flex flex-col gap-1">
-                <label className="text-xs font-semibold text-gray-600">Disbursement Number *</label>
-                <input type="text" name="dv_number" placeholder="e.g. 2026-01-0001"
-                  value={formData.dv_number} onChange={handleChange} required
-                  className="border border-gray-200 p-3 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-purple-300" />
-              </div>
-=======
               <SectionLabel>Check Details</SectionLabel>
->>>>>>> 2507752b1107e69d65bd82b3b1638776fa810b3e
 
               <div className="flex flex-col gap-1">
                 <label className="text-xs font-semibold text-gray-600">Check Date</label>
@@ -528,10 +416,6 @@ export default function Dashboard() {
                   className={`border border-gray-200 p-3 rounded-xl text-sm focus:outline-none focus:ring-2 ${inputFocusRing}`} />
               </div>
 
-<<<<<<< HEAD
-              {/* ── REFUND DETAILS ── */}
-              <SectionLabel>Refund Details</SectionLabel>
-=======
               <SectionLabel>Financials</SectionLabel>
 
               <div className="flex flex-col gap-1">
@@ -567,7 +451,6 @@ export default function Dashboard() {
               </div>
 
               <SectionLabel>Collection Receipt</SectionLabel>
->>>>>>> 2507752b1107e69d65bd82b3b1638776fa810b3e
 
               <div className="flex flex-col gap-1">
                 <label className="text-xs font-semibold text-gray-600">CR Date</label>
@@ -582,22 +465,11 @@ export default function Dashboard() {
               </div>
 
               <div className="flex flex-col gap-1">
-                <label className="text-xs font-semibold text-gray-600">Amount (₱) — auto-calculated</label>
-                <input type="number" name="refund" placeholder="0.00" step="0.01"
-                  value={formData.refund} readOnly
-                  className="border border-gray-200 p-3 rounded-xl text-sm bg-gray-100 text-gray-500 cursor-not-allowed focus:outline-none" />
-              </div>
-
-              <div className="flex flex-col gap-1">
                 <label className="text-xs font-semibold text-gray-600">Date Deposited</label>
                 <input type="date" name="date_deposited" value={formData.date_deposited} onChange={handleChange}
                   className={`border border-gray-200 p-3 rounded-xl text-sm focus:outline-none focus:ring-2 ${inputFocusRing}`} />
               </div>
 
-<<<<<<< HEAD
-              {/* ── LIQUIDATION ── */}
-=======
->>>>>>> 2507752b1107e69d65bd82b3b1638776fa810b3e
               <SectionLabel>Liquidation</SectionLabel>
 
               <div className="flex flex-col gap-1">
@@ -618,10 +490,6 @@ export default function Dashboard() {
                   className={`border border-gray-200 p-3 rounded-xl text-sm focus:outline-none focus:ring-2 ${inputFocusRing}`} />
               </div>
 
-<<<<<<< HEAD
-              {/* ── STATUS & COMPLETION ── */}
-=======
->>>>>>> 2507752b1107e69d65bd82b3b1638776fa810b3e
               <SectionLabel>Status &amp; Completion</SectionLabel>
 
               <div className="flex flex-col gap-1">
@@ -648,13 +516,9 @@ export default function Dashboard() {
                   className={`border border-gray-200 p-3 rounded-xl text-sm focus:outline-none focus:ring-2 resize-none ${inputFocusRing}`} />
               </div>
 
-<<<<<<< HEAD
-              <div className="md:col-span-2 flex gap-3 justify-end mt-2 pt-4 border-t border-purple-100">
-=======
               <div className={`md:col-span-2 flex gap-3 justify-end mt-2 pt-4 border-t transition-colors ${
                 theme === 'green' ? 'border-[#86C99B]/40' : 'border-purple-100'
               }`}>
->>>>>>> 2507752b1107e69d65bd82b3b1638776fa810b3e
                 <button type="button" onClick={() => setShowModal(false)}
                   className="px-6 py-2.5 rounded-xl border border-gray-200 text-gray-600 hover:bg-gray-50 transition text-sm font-medium">
                   Cancel

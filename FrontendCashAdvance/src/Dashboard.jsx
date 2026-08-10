@@ -26,7 +26,7 @@ const EMPTY_FORM = {
   fund: "", dv_date: "", dv_number: "",
   bonded_official_id: "", accountable_official: "", custom_official: "", description: "",
   check_date: "", check_number: "",
-  amount: "", spent: "", refund: "", is_reimbursement: false,
+  amount: "", spent: "", refund: "",
   collection_receipt_date: "", collection_receipt_number: "", date_deposited: "",
   liquidated_date: "", bur_number: "", liquidation_report_number: "",
   status: "", remarks: "", date_submitted_to_coa: "",
@@ -140,7 +140,6 @@ export default function Dashboard() {
       amount:                    item.amount                           || "",
       spent:                     item.spent                            || "",
       refund:                    item.refund                           || "",
-      is_reimbursement:          item.is_reimbursement ? true : false,
       collection_receipt_date:   item.collection_receipt_date?.split("T")[0]   || "",
       collection_receipt_number: item.collection_receipt_number        || "",
       date_deposited:            item.date_deposited?.split("T")[0]    || "",
@@ -341,7 +340,8 @@ export default function Dashboard() {
 
             <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-2 gap-4">
 
-              <SectionLabel>Disbursement Details</SectionLabel>
+              {/* ── GENERAL DETAILS ── */}
+              <SectionLabel>General Details</SectionLabel>
 
               <div className="flex flex-col gap-1">
                 <label className="text-xs font-semibold text-gray-600">Fund</label>
@@ -354,20 +354,6 @@ export default function Dashboard() {
                 <label className="text-xs font-semibold text-gray-600">Accountable Official *</label>
                 <input type="text" name="accountable_official" placeholder="Full name"
                   value={formData.accountable_official} onChange={handleChange} required
-                  className={`border border-gray-200 p-3 rounded-xl text-sm focus:outline-none focus:ring-2 ${inputFocusRing}`} />
-              </div>
-
-              <div className="flex flex-col gap-1">
-                <label className="text-xs font-semibold text-gray-600">DV Date *</label>
-                <input type="date" name="dv_date" value={formData.dv_date}
-                  onChange={handleChange} required
-                  className={`border border-gray-200 p-3 rounded-xl text-sm focus:outline-none focus:ring-2 ${inputFocusRing}`} />
-              </div>
-
-              <div className="flex flex-col gap-1">
-                <label className="text-xs font-semibold text-gray-600">DV Number *</label>
-                <input type="text" name="dv_number" placeholder="e.g. 2026-01-0001"
-                  value={formData.dv_number} onChange={handleChange} required
                   className={`border border-gray-200 p-3 rounded-xl text-sm focus:outline-none focus:ring-2 ${inputFocusRing}`} />
               </div>
 
@@ -402,20 +388,7 @@ export default function Dashboard() {
                   className={`border border-gray-200 p-3 rounded-xl text-sm focus:outline-none focus:ring-2 ${inputFocusRing}`} />
               </div>
 
-              <SectionLabel>Check Details</SectionLabel>
-
-              <div className="flex flex-col gap-1">
-                <label className="text-xs font-semibold text-gray-600">Check Date</label>
-                <input type="date" name="check_date" value={formData.check_date} onChange={handleChange}
-                  className={`border border-gray-200 p-3 rounded-xl text-sm focus:outline-none focus:ring-2 ${inputFocusRing}`} />
-              </div>
-
-              <div className="flex flex-col gap-1">
-                <label className="text-xs font-semibold text-gray-600">Check Number</label>
-                <input type="text" name="check_number" placeholder="Check number" value={formData.check_number} onChange={handleChange}
-                  className={`border border-gray-200 p-3 rounded-xl text-sm focus:outline-none focus:ring-2 ${inputFocusRing}`} />
-              </div>
-
+              {/* ── FINANCIALS ── */}
               <SectionLabel>Financials</SectionLabel>
 
               <div className="flex flex-col gap-1">
@@ -432,25 +405,37 @@ export default function Dashboard() {
                   className={`border border-gray-200 p-3 rounded-xl text-sm focus:outline-none focus:ring-2 ${inputFocusRing}`} />
               </div>
 
+              {/* ── REIMBURSEMENT DETAILS ── */}
+              <SectionLabel>Reimbursement Details</SectionLabel>
+
               <div className="flex flex-col gap-1">
-                <label className="text-xs font-semibold text-gray-600">Refund (₱) — auto-calculated</label>
-                <input type="number" name="refund" placeholder="0.00" step="0.01"
-                  value={formData.refund} readOnly
-                  className="border border-gray-200 p-3 rounded-xl text-sm bg-gray-100 text-gray-500 cursor-not-allowed focus:outline-none" />
+                <label className="text-xs font-semibold text-gray-600">Disbursement Date</label>
+                <input type="date" name="dv_date" value={formData.dv_date}
+                  onChange={handleChange} 
+                  className={`border border-gray-200 p-3 rounded-xl text-sm focus:outline-none focus:ring-2 ${inputFocusRing}`} />
               </div>
 
-              <div className="flex flex-col gap-1 justify-center">
-                <label className="flex items-center gap-2 cursor-pointer mt-4">
-                  <input type="checkbox" name="is_reimbursement"
-                    checked={formData.is_reimbursement} onChange={handleChange}
-                    className={`w-5 h-5 rounded border-gray-300 cursor-pointer ${
-                      theme === 'green' ? 'text-[#128A42] focus:ring-[#86C99B]' : 'text-purple-600 focus:ring-purple-400'
-                    }`} />
-                  <span className="text-sm font-semibold text-gray-700">Reimbursement</span>
-                </label>
+              <div className="flex flex-col gap-1">
+                <label className="text-xs font-semibold text-gray-600">Disbursement Number</label>
+                <input type="text" name="dv_number" placeholder="e.g. 2026-01-0001"
+                  value={formData.dv_number} onChange={handleChange} 
+                  className={`border border-gray-200 p-3 rounded-xl text-sm focus:outline-none focus:ring-2 ${inputFocusRing}`} />
               </div>
 
-              <SectionLabel>Collection Receipt</SectionLabel>
+              <div className="flex flex-col gap-1">
+                <label className="text-xs font-semibold text-gray-600">Check Date</label>
+                <input type="date" name="check_date" value={formData.check_date} onChange={handleChange}
+                  className={`border border-gray-200 p-3 rounded-xl text-sm focus:outline-none focus:ring-2 ${inputFocusRing}`} />
+              </div>
+
+              <div className="flex flex-col gap-1">
+                <label className="text-xs font-semibold text-gray-600">Check Number</label>
+                <input type="text" name="check_number" placeholder="Check number" value={formData.check_number} onChange={handleChange}
+                  className={`border border-gray-200 p-3 rounded-xl text-sm focus:outline-none focus:ring-2 ${inputFocusRing}`} />
+              </div>
+
+              {/* ── REFUND DETAILS ── */}
+              <SectionLabel>Refund Details</SectionLabel>
 
               <div className="flex flex-col gap-1">
                 <label className="text-xs font-semibold text-gray-600">CR Date</label>
@@ -465,11 +450,19 @@ export default function Dashboard() {
               </div>
 
               <div className="flex flex-col gap-1">
+                <label className="text-xs font-semibold text-gray-600">Amount (₱) — auto-calculated</label>
+                <input type="number" name="refund" placeholder="0.00" step="0.01"
+                  value={formData.refund} readOnly
+                  className="border border-gray-200 p-3 rounded-xl text-sm bg-gray-100 text-gray-500 cursor-not-allowed focus:outline-none" />
+              </div>
+
+              <div className="flex flex-col gap-1">
                 <label className="text-xs font-semibold text-gray-600">Date Deposited</label>
                 <input type="date" name="date_deposited" value={formData.date_deposited} onChange={handleChange}
                   className={`border border-gray-200 p-3 rounded-xl text-sm focus:outline-none focus:ring-2 ${inputFocusRing}`} />
               </div>
 
+              {/* ── LIQUIDATION ── */}
               <SectionLabel>Liquidation</SectionLabel>
 
               <div className="flex flex-col gap-1">
@@ -490,6 +483,7 @@ export default function Dashboard() {
                   className={`border border-gray-200 p-3 rounded-xl text-sm focus:outline-none focus:ring-2 ${inputFocusRing}`} />
               </div>
 
+              {/* ── STATUS & COMPLETION ── */}
               <SectionLabel>Status &amp; Completion</SectionLabel>
 
               <div className="flex flex-col gap-1">

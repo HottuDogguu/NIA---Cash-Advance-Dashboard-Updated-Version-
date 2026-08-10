@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { PieChart } from "@mui/x-charts/PieChart";
 import { formatDateTime } from "../functions";
+import { useTheme } from "../context/ThemeContext";
 
 const fmt = (n) =>
   "₱" + Number(n || 0).toLocaleString("en-PH", { minimumFractionDigits: 2 });
@@ -12,6 +13,7 @@ const ACTION_STYLES = {
 };
 
 export default function Logs() {
+  const { theme } = useTheme();
   const [cashAdvances, setCashAdvances] = useState([]);
   const [auditLogs,    setAuditLogs]    = useState([]);
   const [loading,      setLoading]      = useState(true);
@@ -43,7 +45,9 @@ export default function Logs() {
   if (loading) {
     return (
       <div className="flex items-center justify-center py-20 text-gray-400">
-        <div className="animate-spin w-8 h-8 border-4 border-purple-200 border-t-purple-600 rounded-full mr-3" />
+        <div className={`animate-spin w-8 h-8 border-4 rounded-full mr-3 ${
+          theme === 'green' ? 'border-[#E3F5E9] border-t-[#128A42]' : 'border-purple-200 border-t-purple-600'
+        }`} />
         Loading audit logs…
       </div>
     );
@@ -59,7 +63,9 @@ export default function Logs() {
       </div>
 
       {/* Pie Charts */}
-      <div className="bg-white rounded-2xl p-6 shadow-sm border border-purple-100">
+      <div className={`bg-white rounded-2xl p-6 shadow-sm border transition-colors ${
+        theme === 'green' ? 'border-[#86C99B]' : 'border-purple-100'
+      }`}>
         <div className="flex flex-wrap gap-8 justify-center">
 
           <div className="flex flex-col items-center">
@@ -68,8 +74,8 @@ export default function Logs() {
             <PieChart
               series={[{
                 data: [
-                  { id: 0, value: settledCash,      label: `Settled (${fmt(settledCash)})`,           color: "#7c3aed" },
-                  { id: 1, value: totalPendingCash, label: `Pending Out (${fmt(totalPendingCash)})`,  color: "#c084fc" },
+                  { id: 0, value: settledCash,      label: `Settled (${fmt(settledCash)})`,          color: theme === 'green' ? '#128A42' : '#7c3aed' },
+                  { id: 1, value: totalPendingCash, label: `Pending Out (${fmt(totalPendingCash)})`,  color: theme === 'green' ? '#86C99B' : '#c084fc' },
                 ],
                 innerRadius: 55, outerRadius: 95,
               }]}
@@ -95,7 +101,9 @@ export default function Logs() {
       </div>
 
       {/* Audit Log Table */}
-      <div className="bg-white rounded-2xl shadow-sm border border-purple-100 overflow-hidden">
+      <div className={`bg-white rounded-2xl shadow-sm border overflow-hidden transition-colors ${
+        theme === 'green' ? 'border-[#86C99B]' : 'border-purple-100'
+      }`}>
         <div className="px-6 py-4 border-b border-gray-100 flex items-center justify-between">
           <h2 className="font-bold text-gray-700">Activity Log</h2>
           <span className="text-xs text-gray-400">{auditLogs.length} entries</span>
@@ -119,7 +127,9 @@ export default function Logs() {
                   <tr key={item.id} className="hover:bg-gray-50 transition-colors">
                     <td className="px-4 py-3 text-gray-500 text-xs">{item.id}</td>
                     <td className="px-4 py-3 text-xs">{item.cash_advance_id}</td>
-                    <td className="px-4 py-3 font-medium text-purple-700 text-xs">
+                    <td className={`px-4 py-3 font-medium text-xs transition-colors ${
+                      theme === 'green' ? 'text-[#128A42]' : 'text-purple-700'
+                    }`}>
                       {typeof item.dv_number === "string" ? item.dv_number.replace(/"/g, "") : (item.dv_number ?? "—")}
                     </td>
                     <td className="px-4 py-3 text-xs">{item.username || "—"}</td>

@@ -4,6 +4,7 @@ import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid,
   Tooltip, ResponsiveContainer, Legend,
 } from "recharts";
+import { useTheme } from "../context/ThemeContext";
 
 const fmt = (n) =>
   "₱" + Number(n || 0).toLocaleString("en-PH", { minimumFractionDigits: 2 });
@@ -12,6 +13,7 @@ const fmtDate = (d) =>
   d ? new Date(d).toLocaleDateString("en-PH", { year: "numeric", month: "short", day: "numeric" }) : "—";
 
 export default function Reporting() {
+  const { theme } = useTheme();
   const [cashAdvances, setCashAdvances] = useState([]);
   const [loading, setLoading]           = useState(true);
 
@@ -46,10 +48,10 @@ export default function Reporting() {
     .reduce((s, c) => s + Number(c.amount || 0), 0);
 
   const cards = [
-    { label: "Total Outstanding",    value: fmt(totalOutstanding),   icon: FaMoneyBill,          color: "text-blue-600",   bg: "bg-blue-50",   note: "Active distributions in the field"        },
-    { label: "Pending Liquidations", value: fmt(pendingLiquidation), icon: FaHourglassHalf,      color: "text-red-600",    bg: "bg-red-50",    note: "Unaccounted financial exposure"           },
-    { label: "Refund Due",           value: fmt(refundDue),          icon: FaBalanceScaleRight,  color: "text-amber-600",  bg: "bg-amber-50",  note: "Remaining balances owed to treasury"      },
-    { label: "COA Submitted",        value: fmt(coaSubmitted),       icon: FaCheckCircle,        color: "text-green-600",  bg: "bg-green-50",  note: "Cleared accounts submitted to audit"      },
+    { label: "Total Outstanding",    value: fmt(totalOutstanding),   icon: FaMoneyBill,         color: "text-blue-600",  bg: "bg-blue-50",  note: "Active distributions in the field"        },
+    { label: "Pending Liquidations", value: fmt(pendingLiquidation), icon: FaHourglassHalf,      color: "text-red-600",   bg: "bg-red-50",   note: "Unaccounted financial exposure"           },
+    { label: "Refund Due",           value: fmt(refundDue),          icon: FaBalanceScaleRight,  color: "text-amber-600", bg: "bg-amber-50", note: "Remaining balances owed to treasury"      },
+    { label: "COA Submitted",        value: fmt(coaSubmitted),       icon: FaCheckCircle,        color: "text-green-600", bg: "bg-green-50", note: "Cleared accounts submitted to audit"      },
   ];
 
   // Chart: compare amount vs spent by DV
@@ -63,7 +65,9 @@ export default function Reporting() {
   if (loading) {
     return (
       <div className="flex items-center justify-center py-20 text-gray-400">
-        <div className="animate-spin w-8 h-8 border-4 border-purple-200 border-t-purple-600 rounded-full mr-3" />
+        <div className={`animate-spin w-8 h-8 border-4 rounded-full mr-3 ${
+          theme === 'green' ? 'border-[#E3F5E9] border-t-[#128A42]' : 'border-purple-200 border-t-purple-600'
+        }`} />
         Loading reports…
       </div>
     );
@@ -75,7 +79,9 @@ export default function Reporting() {
       {/* Summary Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5">
         {cards.map(({ label, value, icon: Icon, color, bg, note }) => (
-          <div key={label} className="bg-white rounded-2xl p-5 shadow-sm border border-purple-100 flex flex-col gap-3">
+          <div key={label} className={`bg-white rounded-2xl p-5 shadow-sm border flex flex-col gap-3 transition-colors ${
+            theme === 'green' ? 'border-[#86C99B]' : 'border-purple-100'
+          }`}>
             <div className="flex items-center justify-between">
               <span className={`text-xs font-bold uppercase tracking-wider ${color}`}>{label}</span>
               <span className={`p-2 rounded-xl ${bg}`}><Icon className={`w-4 h-4 ${color}`} /></span>
@@ -87,42 +93,54 @@ export default function Reporting() {
       </div>
 
       {/* Chart */}
-      <div className="bg-white rounded-2xl p-6 shadow-sm border border-purple-100">
+      <div className={`bg-white rounded-2xl p-6 shadow-sm border transition-colors ${
+        theme === 'green' ? 'border-[#86C99B]' : 'border-purple-100'
+      }`}>
         <h2 className="font-bold text-gray-700 mb-4">Amount vs Spent vs Refund (Recent 8 Records)</h2>
         <ResponsiveContainer width="100%" height={280}>
           <BarChart data={chartData}>
-            <CartesianGrid strokeDasharray="3 3" stroke="#f3e8ff" />
+            <CartesianGrid strokeDasharray="3 3" stroke={theme === 'green' ? '#E3F5E9' : '#f3e8ff'} />
             <XAxis dataKey="dv" tick={{ fontSize: 11 }} />
             <YAxis tick={{ fontSize: 11 }} />
             <Tooltip formatter={(v) => fmt(v)} />
             <Legend />
-            <Bar dataKey="Amount" fill="#c084fc" radius={[4,4,0,0]} />
-            <Bar dataKey="Spent"  fill="#7c3aed" radius={[4,4,0,0]} />
-            <Bar dataKey="Refund" fill="#a855f7" radius={[4,4,0,0]} />
+            <Bar dataKey="Amount" fill={theme === 'green' ? '#C4E8D1' : '#c084fc'} radius={[4,4,0,0]} />
+            <Bar dataKey="Spent"  fill={theme === 'green' ? '#86C99B' : '#7c3aed'} radius={[4,4,0,0]} />
+            <Bar dataKey="Refund" fill={theme === 'green' ? '#128A42' : '#a855f7'} radius={[4,4,0,0]} />
           </BarChart>
         </ResponsiveContainer>
       </div>
 
       {/* Full Table */}
-      <div className="bg-white rounded-2xl shadow-sm border border-purple-100 overflow-hidden">
+      <div className={`bg-white rounded-2xl shadow-sm border overflow-hidden transition-colors ${
+        theme === 'green' ? 'border-[#86C99B]' : 'border-purple-100'
+      }`}>
         <div className="px-6 py-4 border-b border-gray-100 flex items-center justify-between">
           <h2 className="font-bold text-gray-700">All Cash Advance Records</h2>
           <span className="text-xs text-gray-400">{cashAdvances.length} total records · auto-refreshes every 10s</span>
         </div>
         <div className="overflow-x-auto">
           <table className="w-full text-sm text-left">
-            <thead className="bg-purple-50 text-purple-900">
+            <thead className={`transition-colors ${
+              theme === 'green' ? 'bg-[#C4E8D1] text-[#0C6B31]' : 'bg-purple-50 text-purple-900'
+            }`}>
               <tr>
                 {["DV Date","DV Number","Official","Amount","Spent","Refund","Status","COA Date"].map((h) => (
-                  <th key={h} className="px-4 py-3 border-b border-purple-100 text-xs font-semibold whitespace-nowrap">{h}</th>
+                  <th key={h} className={`px-4 py-3 border-b text-xs font-semibold whitespace-nowrap transition-colors ${
+                    theme === 'green' ? 'border-[#86C99B]' : 'border-purple-100'
+                  }`}>{h}</th>
                 ))}
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-50">
               {cashAdvances.map((c) => (
-                <tr key={c.id} className="hover:bg-purple-50 transition-colors">
+                <tr key={c.id} className={`transition-colors ${
+                  theme === 'green' ? 'hover:bg-[#E3F5E9]' : 'hover:bg-purple-50'
+                }`}>
                   <td className="px-4 py-3 whitespace-nowrap text-xs">{fmtDate(c.dv_date)}</td>
-                  <td className="px-4 py-3 font-medium text-purple-700">{c.dv_number}</td>
+                  <td className={`px-4 py-3 font-medium transition-colors ${
+                    theme === 'green' ? 'text-[#128A42]' : 'text-purple-700'
+                  }`}>{c.dv_number}</td>
                   <td className="px-4 py-3">{c.accountable_official}</td>
                   <td className="px-4 py-3 text-green-700 font-semibold">{fmt(c.amount)}</td>
                   <td className="px-4 py-3">{fmt(c.spent)}</td>

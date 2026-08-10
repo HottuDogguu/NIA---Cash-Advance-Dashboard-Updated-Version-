@@ -89,11 +89,14 @@ app.post("/login", async (req, res) => {
     res.json({
       message: "Login successful",
       user: {
-        id:       user.id,
-        username: user.username,
-        role:     user.role,
-        descrip:  user.descrip,
-        image:    user.image ? Buffer.from(user.image).toString("base64") : null,
+        id:          user.id,
+        username:    user.username,
+        role:        user.role,
+        descrip:     user.descrip,
+        permissions: user.permissions
+          ? (typeof user.permissions === "string" ? JSON.parse(user.permissions) : user.permissions)
+          : null,
+        image: user.image ? Buffer.from(user.image).toString("base64") : null,
       },
     });
   } catch (e) {
@@ -103,15 +106,14 @@ app.post("/login", async (req, res) => {
 });
 
 // =====================================================
-// USER MANAGEMENT (Admin only enforced on frontend;
-// add middleware here for production hardening)
+// USER MANAGEMENT
 // =====================================================
 
 // GET all users
 app.get("/api/users", async (req, res) => {
   try {
     const [rows] = await pool.query(
-      "SELECT id, username, role, descrip, created_at FROM users ORDER BY created_at ASC"
+      "SELECT id, username, role, descrip, permissions, created_at FROM users ORDER BY created_at ASC"
     );
     res.json(rows);
   } catch (e) { res.status(500).json({ message: e.message }); }
@@ -119,14 +121,15 @@ app.get("/api/users", async (req, res) => {
 
 // POST create user
 app.post("/api/users", async (req, res) => {
-  const { username, password, role, descrip } = req.body;
+  const { username, password, role, descrip, permissions } = req.body;
   if (!username || !password || !role)
     return res.status(400).json({ message: "Username, password, and role are required" });
   try {
     const hash = await bcrypt.hash(password, 10);
+    const permJson = permissions ? (typeof permissions === "string" ? permissions : JSON.stringify(permissions)) : null;
     const [result] = await pool.query(
-      "INSERT INTO users (username, password_hash, role, descrip) VALUES (?,?,?,?)",
-      [username, hash, role, descrip || null]
+      "INSERT INTO users (username, password_hash, role, descrip, permissions) VALUES (?,?,?,?,?)",
+      [username, hash, role, descrip || null, permJson]
     );
     res.json({ message: "User created successfully", id: result.insertId });
   } catch (e) {
@@ -139,7 +142,7 @@ app.post("/api/users", async (req, res) => {
 // PUT update user
 app.put("/api/users/:id", async (req, res) => {
   const { id } = req.params;
-  const { username, password, role, descrip } = req.body;
+  const { username, password, role, descrip, permissions } = req.body;
   try {
     const [existing] = await pool.query("SELECT * FROM users WHERE id=?", [id]);
     if (!existing.length) return res.status(404).json({ message: "User not found" });
@@ -149,9 +152,20 @@ app.put("/api/users/:id", async (req, res) => {
       passwordHash = await bcrypt.hash(password, 10);
     }
 
+    const permJson = permissions
+      ? (typeof permissions === "string" ? permissions : JSON.stringify(permissions))
+      : existing[0].permissions;
+
     await pool.query(
-      "UPDATE users SET username=?, password_hash=?, role=?, descrip=? WHERE id=?",
-      [username || existing[0].username, passwordHash, role || existing[0].role, descrip ?? existing[0].descrip, id]
+      "UPDATE users SET username=?, password_hash=?, role=?, descrip=?, permissions=? WHERE id=?",
+      [
+        username || existing[0].username,
+        passwordHash,
+        role || existing[0].role,
+        descrip ?? existing[0].descrip,
+        permJson,
+        id
+      ]
     );
     res.json({ message: "User updated successfully" });
   } catch (e) {
@@ -196,17 +210,6 @@ app.get("/api/stats", async (req, res) => {
 // =====================================================
 // CASH ADVANCES — CRUD
 // =====================================================
-
-// All fields matching the Excel layout
-const CA_INSERT_FIELDS = [
-  "fund","dv_date","dv_number",
-  "bonded_official_id","accountable_official","description",
-  "check_date","check_number",
-  "amount","spent","refund",
-  "collection_receipt_date","collection_receipt_number","date_deposited",
-  "liquidated_date","bur_number","liquidation_report_number",
-  "status","remarks","date_submitted_to_coa","created_by",
-];
 
 // GET all
 app.get("/api/cash_advance_dashboard", async (req, res) => {
@@ -382,7 +385,6 @@ app.get("/all", async (req, res) => {
   } catch (e) { res.status(500).json({ message: e.message }); }
 });
 
-
 // =====================================================
 // AUDIT LOGS
 // =====================================================
@@ -403,7 +405,6 @@ app.get("/audit_logs", async (req, res) => {
 // =====================================================
 
 // POST /api/cash_advance_dashboard/:id/upload
-// Attaches a file to a specific cash advance record
 app.post("/api/cash_advance_dashboard/:id/upload", upload.single("file"), async (req, res) => {
   const { id } = req.params;
 
@@ -412,7 +413,6 @@ app.post("/api/cash_advance_dashboard/:id/upload", upload.single("file"), async 
   }
 
   try {
-    // Get existing record to check for old file
     const [rows] = await pool.query(
       "SELECT file_path FROM cash_advances WHERE id = ? AND deleted_at IS NULL",
       [id]
@@ -421,7 +421,6 @@ app.post("/api/cash_advance_dashboard/:id/upload", upload.single("file"), async 
       return res.status(404).json({ message: "Record not found" });
     }
 
-    // Delete the old file from disk if one exists
     if (rows[0].file_path) {
       const oldFilePath = path.join(uploadsDir, rows[0].file_path);
       if (fs.existsSync(oldFilePath)) {
@@ -429,7 +428,6 @@ app.post("/api/cash_advance_dashboard/:id/upload", upload.single("file"), async 
       }
     }
 
-    // Save new file path in the database
     await pool.query(
       "UPDATE cash_advances SET file_path = ? WHERE id = ?",
       [req.file.filename, id]
@@ -446,7 +444,6 @@ app.post("/api/cash_advance_dashboard/:id/upload", upload.single("file"), async 
 });
 
 // DELETE /api/cash_advance_dashboard/:id/file
-// Removes the attached file from a cash advance record
 app.delete("/api/cash_advance_dashboard/:id/file", async (req, res) => {
   const { id } = req.params;
 
@@ -459,7 +456,6 @@ app.delete("/api/cash_advance_dashboard/:id/file", async (req, res) => {
       return res.status(404).json({ message: "Record not found" });
     }
 
-    // Delete the file from disk
     if (rows[0].file_path) {
       const filePath = path.join(uploadsDir, rows[0].file_path);
       if (fs.existsSync(filePath)) {
@@ -467,7 +463,6 @@ app.delete("/api/cash_advance_dashboard/:id/file", async (req, res) => {
       }
     }
 
-    // Clear file_path in the database
     await pool.query(
       "UPDATE cash_advances SET file_path = NULL WHERE id = ?",
       [id]

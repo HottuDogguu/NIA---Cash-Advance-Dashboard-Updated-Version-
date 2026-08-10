@@ -49,6 +49,20 @@ export default function Dashboard() {
   const isAdmin     = user.role === "admin";
   const isCashStaff = user.role === "admin" || user.role === "cash_user";
 
+  // ── Permission Helpers ───────────────────────────────────
+  const userPerms = (() => {
+    try {
+      const p = user.permissions;
+      if (!p) return {};
+      return typeof p === "string" ? JSON.parse(p) : p;
+    } catch { return {}; }
+  })();
+
+  const can = (section) => {
+    if (isAdmin) return true;
+    return userPerms[section] === true;
+  };
+
   const showToast = (message, type = "success") => {
     setToast({ message, type });
     setTimeout(() => setToast(null), 3000);
@@ -65,15 +79,34 @@ export default function Dashboard() {
     </div>
   );
 
-  const SectionLabel = ({ children }) => (
-    <div className="md:col-span-2 mt-2">
-      <p className={`text-xs font-bold uppercase tracking-wider border-b pb-1 transition-colors ${
-        theme === 'green' ? 'text-[#128A42] border-[#86C99B]/40' : 'text-purple-700 border-purple-100'
-      }`}>{children}</p>
-    </div>
-  );
-
   const inputFocusRing = theme === 'green' ? 'focus:ring-[#86C99B]' : 'focus:ring-purple-300';
+
+  const SectionLabel = ({ sectionKey, children }) => {
+    const permitted = can(sectionKey);
+    return (
+      <div className="md:col-span-2 mt-2">
+        <div className="flex items-center gap-2 border-b pb-1">
+          <p className={`text-xs font-bold uppercase tracking-wider flex-1 transition-colors ${
+            theme === 'green' ? 'text-[#128A42]' : 'text-purple-700'
+          }`}>{children}</p>
+          {!permitted && (
+            <span className="text-xs text-gray-400 flex items-center gap-1 font-medium">
+              🔒 View only
+            </span>
+          )}
+        </div>
+      </div>
+    );
+  };
+
+  const fieldCls = (sectionKey, extra = "") => ({
+    disabled: !can(sectionKey),
+    className: `border border-gray-200 p-3 rounded-xl text-sm focus:outline-none focus:ring-2 transition-colors w-full ${
+      !can(sectionKey)
+        ? "bg-gray-100 text-gray-400 cursor-not-allowed opacity-70"
+        : inputFocusRing
+    } ${extra}`,
+  });
 
   // ── Fetch ────────────────────────────────────────────────
   const fetchData = useCallback(async () => {
@@ -128,8 +161,8 @@ export default function Dashboard() {
   const openEdit = (item) => {
     setIsEditing(true); setEditId(item.id);
     setFormData({
-      fund:                      item.fund                              || "",
-      dv_date:                   item.dv_date?.split("T")[0]           || "",
+      fund:                      item.fund                               || "",
+      dv_date:                   item.dv_date?.split("T")[0]               || "",
       dv_number:                 item.dv_number                        || "",
       accountable_official:      item.accountable_official             || "",
       bonded_official_id:        item.bonded_official_id               || "",
@@ -219,6 +252,8 @@ export default function Dashboard() {
     refund: Number(d.refund || 0),
   }));
 
+  const canAddRecord = isAdmin || Object.values(userPerms).some(Boolean);
+
   // ── Render ───────────────────────────────────────────────
   return (
     <div className="flex flex-col gap-6 min-h-full">
@@ -283,14 +318,16 @@ export default function Dashboard() {
           }`}>
             Cash Advance Records
           </h2>
-          <button
-            onClick={openAdd}
-            className={`text-white px-5 py-2 rounded-xl shadow-md transition font-semibold text-sm ${
-              theme === "green" ? "bg-[#128A42] hover:bg-[#0C6B31]" : "bg-purple-600 hover:bg-purple-700"
-            }`}
-          >
-            + Add Cash Advance
-          </button>
+          {canAddRecord && (
+            <button
+              onClick={openAdd}
+              className={`text-white px-5 py-2 rounded-xl shadow-md transition font-semibold text-sm ${
+                theme === "green" ? "bg-[#128A42] hover:bg-[#0C6B31]" : "bg-purple-600 hover:bg-purple-700"
+              }`}
+            >
+              + Add Cash Advance
+            </button>
+          )}
         </div>
 
         {loading ? (
@@ -316,12 +353,19 @@ export default function Dashboard() {
         <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-3xl p-8 w-full max-w-2xl shadow-2xl max-h-[90vh] overflow-y-auto">
 
-            <div className="flex justify-between items-center mb-6">
-              <h2 className={`text-xl font-bold transition-colors ${
-                theme === 'green' ? 'text-[#128A42]' : 'text-purple-900'
-              }`}>
-                {isEditing ? "Edit Cash Advance" : "Add Cash Advance"}
-              </h2>
+            <div className="flex justify-between items-center mb-4">
+              <div>
+                <h2 className={`text-xl font-bold transition-colors ${
+                  theme === 'green' ? 'text-[#128A42]' : 'text-purple-900'
+                }`}>
+                  {isEditing ? "Edit Cash Advance" : "Add Cash Advance"}
+                </h2>
+                {!isAdmin && (
+                  <p className="text-xs text-gray-400 mt-0.5">
+                    🔒 Grayed sections are view-only based on your access level
+                  </p>
+                )}
+              </div>
               <button onClick={() => setShowModal(false)}
                 className="text-3xl text-gray-400 hover:text-red-500 transition leading-none">×</button>
             </div>
@@ -329,26 +373,32 @@ export default function Dashboard() {
             <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-2 gap-4">
 
               {/* ── GENERAL DETAILS ── */}
-              <SectionLabel>General Details</SectionLabel>
+              <SectionLabel sectionKey="general_details">General Details</SectionLabel>
 
               <div className="flex flex-col gap-1">
                 <label className="text-xs font-semibold text-gray-600">Fund</label>
                 <input type="text" name="fund" placeholder="e.g. 501 COB"
                   value={formData.fund} onChange={handleChange}
-                  className={`border border-gray-200 p-3 rounded-xl text-sm focus:outline-none focus:ring-2 transition-colors ${inputFocusRing}`} />
+                  {...fieldCls("general_details")} />
               </div>
 
               <div className="flex flex-col gap-1">
-                <label className="text-xs font-semibold text-gray-600">Accountable Official *</label>
+                <label className="text-xs font-semibold text-gray-600">
+                  Accountable Official {can("general_details") && <span className="text-red-500">*</span>}
+                </label>
                 <input type="text" name="accountable_official" placeholder="Full name"
-                  value={formData.accountable_official} onChange={handleChange} required
-                  className={`border border-gray-200 p-3 rounded-xl text-sm focus:outline-none focus:ring-2 transition-colors ${inputFocusRing}`} />
+                  value={formData.accountable_official} onChange={handleChange}
+                  required={can("general_details")}
+                  {...fieldCls("general_details")} />
               </div>
 
               <div className="flex flex-col gap-1">
                 <label className="text-xs font-semibold text-gray-600">Bonded Official</label>
                 <select name="bonded_official_id" value={formData.bonded_official_id} onChange={handleChange}
-                  className={`border border-gray-200 p-3 rounded-xl text-sm focus:outline-none focus:ring-2 transition-colors ${inputFocusRing}`}>
+                  disabled={!can("general_details")}
+                  className={`border border-gray-200 p-3 rounded-xl text-sm focus:outline-none focus:ring-2 transition-colors ${
+                    !can("general_details") ? "bg-gray-100 text-gray-400 cursor-not-allowed opacity-70" : inputFocusRing
+                  }`}>
                   <option value="">— Select bonded official —</option>
                   <option value="NA">N/A (Not Applicable)</option>
                   {officials.map((o) => (
@@ -360,12 +410,12 @@ export default function Dashboard() {
                 </select>
               </div>
 
-              {formData.bonded_official_id === "NA" && (
+              {formData.bonded_official_id === "NA" && can("general_details") && (
                 <div className="flex flex-col gap-1">
                   <label className="text-xs font-semibold text-gray-600">Specify Official Name (Optional)</label>
                   <input type="text" name="custom_official" placeholder="Enter official name..."
                     value={formData.custom_official} onChange={handleChange}
-                    className={`border border-gray-200 p-3 rounded-xl text-sm focus:outline-none focus:ring-2 transition-colors ${inputFocusRing}`} />
+                    {...fieldCls("general_details")} />
                 </div>
               )}
 
@@ -373,68 +423,70 @@ export default function Dashboard() {
                 <label className="text-xs font-semibold text-gray-600">Description</label>
                 <input type="text" name="description" placeholder="Purpose of cash advance"
                   value={formData.description} onChange={handleChange}
-                  className={`border border-gray-200 p-3 rounded-xl text-sm focus:outline-none focus:ring-2 transition-colors ${inputFocusRing}`} />
+                  {...fieldCls("general_details")} />
               </div>
 
               {/* ── FINANCIALS ── */}
-              <SectionLabel>Financials</SectionLabel>
+              <SectionLabel sectionKey="financials">Financials</SectionLabel>
 
               <div className="flex flex-col gap-1">
-                <label className="text-xs font-semibold text-gray-600">Amount (₱) *</label>
+                <label className="text-xs font-semibold text-gray-600">
+                  Amount (₱) {can("financials") && <span className="text-red-500">*</span>}
+                </label>
                 <input type="number" name="amount" placeholder="0.00" step="0.01" min="0"
-                  value={formData.amount} onChange={handleChange} required
-                  className={`border border-gray-200 p-3 rounded-xl text-sm focus:outline-none focus:ring-2 transition-colors ${inputFocusRing}`} />
+                  value={formData.amount} onChange={handleChange}
+                  required={can("financials")}
+                  {...fieldCls("financials")} />
               </div>
 
               <div className="flex flex-col gap-1">
                 <label className="text-xs font-semibold text-gray-600">Spent (₱)</label>
                 <input type="number" name="spent" placeholder="0.00" step="0.01" min="0"
                   value={formData.spent} onChange={handleChange}
-                  className={`border border-gray-200 p-3 rounded-xl text-sm focus:outline-none focus:ring-2 transition-colors ${inputFocusRing}`} />
+                  {...fieldCls("financials")} />
               </div>
 
               {/* ── REIMBURSEMENT DETAILS ── */}
-              <SectionLabel>Reimbursement Details</SectionLabel>
+              <SectionLabel sectionKey="reimbursement_details">Reimbursement Details</SectionLabel>
 
               <div className="flex flex-col gap-1">
                 <label className="text-xs font-semibold text-gray-600">Disbursement Date</label>
-                <input type="date" name="dv_date" value={formData.dv_date}
-                  onChange={handleChange} 
-                  className={`border border-gray-200 p-3 rounded-xl text-sm focus:outline-none focus:ring-2 transition-colors ${inputFocusRing}`} />
+                <input type="date" name="dv_date" value={formData.dv_date} onChange={handleChange}
+                  {...fieldCls("reimbursement_details")} />
               </div>
 
               <div className="flex flex-col gap-1">
                 <label className="text-xs font-semibold text-gray-600">Disbursement Number</label>
                 <input type="text" name="dv_number" placeholder="e.g. 2026-01-0001"
-                  value={formData.dv_number} onChange={handleChange} 
-                  className={`border border-gray-200 p-3 rounded-xl text-sm focus:outline-none focus:ring-2 transition-colors ${inputFocusRing}`} />
+                  value={formData.dv_number} onChange={handleChange}
+                  {...fieldCls("reimbursement_details")} />
               </div>
 
               <div className="flex flex-col gap-1">
                 <label className="text-xs font-semibold text-gray-600">Check Date</label>
                 <input type="date" name="check_date" value={formData.check_date} onChange={handleChange}
-                  className={`border border-gray-200 p-3 rounded-xl text-sm focus:outline-none focus:ring-2 transition-colors ${inputFocusRing}`} />
+                  {...fieldCls("reimbursement_details")} />
               </div>
 
               <div className="flex flex-col gap-1">
                 <label className="text-xs font-semibold text-gray-600">Check Number</label>
                 <input type="text" name="check_number" placeholder="Check number" value={formData.check_number} onChange={handleChange}
-                  className={`border border-gray-200 p-3 rounded-xl text-sm focus:outline-none focus:ring-2 transition-colors ${inputFocusRing}`} />
+                  {...fieldCls("reimbursement_details")} />
               </div>
 
               {/* ── REFUND DETAILS ── */}
-              <SectionLabel>Refund Details</SectionLabel>
+              <SectionLabel sectionKey="refund_details">Refund Details</SectionLabel>
 
               <div className="flex flex-col gap-1">
                 <label className="text-xs font-semibold text-gray-600">CR Date</label>
                 <input type="date" name="collection_receipt_date" value={formData.collection_receipt_date} onChange={handleChange}
-                  className={`border border-gray-200 p-3 rounded-xl text-sm focus:outline-none focus:ring-2 transition-colors ${inputFocusRing}`} />
+                  {...fieldCls("refund_details")} />
               </div>
 
               <div className="flex flex-col gap-1">
                 <label className="text-xs font-semibold text-gray-600">CR Number</label>
                 <input type="text" name="collection_receipt_number" placeholder="CR number" value={formData.collection_receipt_number} onChange={handleChange}
-                  className={`border border-gray-200 p-3 rounded-xl text-sm focus:outline-none focus:ring-2 transition-colors ${inputFocusRing}`} />
+                  {...fieldCls("refund_details")} />
               </div>
 
               <div className="flex flex-col gap-1">
@@ -447,37 +499,43 @@ export default function Dashboard() {
               <div className="flex flex-col gap-1">
                 <label className="text-xs font-semibold text-gray-600">Date Deposited</label>
                 <input type="date" name="date_deposited" value={formData.date_deposited} onChange={handleChange}
-                  className={`border border-gray-200 p-3 rounded-xl text-sm focus:outline-none focus:ring-2 transition-colors ${inputFocusRing}`} />
+                  {...fieldCls("refund_details")} />
               </div>
 
               {/* ── LIQUIDATION ── */}
-              <SectionLabel>Liquidation</SectionLabel>
+              <SectionLabel sectionKey="liquidation">Liquidation</SectionLabel>
 
               <div className="flex flex-col gap-1">
                 <label className="text-xs font-semibold text-gray-600">Liquidated Date</label>
                 <input type="date" name="liquidated_date" value={formData.liquidated_date} onChange={handleChange}
-                  className={`border border-gray-200 p-3 rounded-xl text-sm focus:outline-none focus:ring-2 transition-colors ${inputFocusRing}`} />
+                  {...fieldCls("liquidation")} />
               </div>
 
               <div className="flex flex-col gap-1">
                 <label className="text-xs font-semibold text-gray-600">BUR Number</label>
                 <input type="text" name="bur_number" placeholder="BUR number" value={formData.bur_number} onChange={handleChange}
-                  className={`border border-gray-200 p-3 rounded-xl text-sm focus:outline-none focus:ring-2 transition-colors ${inputFocusRing}`} />
+                  {...fieldCls("liquidation")} />
               </div>
 
               <div className="flex flex-col gap-1">
                 <label className="text-xs font-semibold text-gray-600">Liquidation Report No.</label>
                 <input type="text" name="liquidation_report_number" placeholder="Report number" value={formData.liquidation_report_number} onChange={handleChange}
-                  className={`border border-gray-200 p-3 rounded-xl text-sm focus:outline-none focus:ring-2 transition-colors ${inputFocusRing}`} />
+                  {...fieldCls("liquidation")} />
               </div>
 
               {/* ── STATUS & COMPLETION ── */}
-              <SectionLabel>Status &amp; Completion</SectionLabel>
+              <SectionLabel sectionKey="status_completion">Status &amp; Completion</SectionLabel>
 
               <div className="flex flex-col gap-1">
-                <label className="text-xs font-semibold text-gray-600">Status *</label>
-                <select name="status" value={formData.status} onChange={handleChange} required
-                  className={`border border-gray-200 p-3 rounded-xl text-sm focus:outline-none focus:ring-2 transition-colors ${inputFocusRing}`}>
+                <label className="text-xs font-semibold text-gray-600">
+                  Status {can("status_completion") && <span className="text-red-500">*</span>}
+                </label>
+                <select name="status" value={formData.status} onChange={handleChange}
+                  required={can("status_completion")}
+                  disabled={!can("status_completion")}
+                  className={`border border-gray-200 p-3 rounded-xl text-sm focus:outline-none focus:ring-2 transition-colors ${
+                    !can("status_completion") ? "bg-gray-100 text-gray-400 cursor-not-allowed opacity-70" : inputFocusRing
+                  }`}>
                   <option value="">— Select status —</option>
                   <option value="Ongoing">Ongoing</option>
                   <option value="Done">Completed</option>
@@ -488,16 +546,20 @@ export default function Dashboard() {
                 <label className="text-xs font-semibold text-gray-600">Date Submitted to COA</label>
                 <input type="date" name="date_submitted_to_coa"
                   value={formData.date_submitted_to_coa} onChange={handleChange}
-                  className={`border border-gray-200 p-3 rounded-xl text-sm focus:outline-none focus:ring-2 transition-colors ${inputFocusRing}`} />
+                  {...fieldCls("status_completion")} />
               </div>
 
               <div className="flex flex-col gap-1 md:col-span-2">
                 <label className="text-xs font-semibold text-gray-600">Remarks</label>
                 <textarea name="remarks" rows={2} placeholder="Optional notes…"
                   value={formData.remarks} onChange={handleChange}
-                  className={`border border-gray-200 p-3 rounded-xl text-sm focus:outline-none focus:ring-2 resize-none transition-colors ${inputFocusRing}`} />
+                  disabled={!can("status_completion")}
+                  className={`border border-gray-200 p-3 rounded-xl text-sm focus:outline-none focus:ring-2 resize-none transition-colors ${
+                    !can("status_completion") ? "bg-gray-100 text-gray-400 cursor-not-allowed opacity-70" : inputFocusRing
+                  }`} />
               </div>
 
+              {/* ── Buttons ── */}
               <div className={`md:col-span-2 flex gap-3 justify-end mt-2 pt-4 border-t transition-colors ${
                 theme === 'green' ? 'border-[#86C99B]/40' : 'border-purple-100'
               }`}>

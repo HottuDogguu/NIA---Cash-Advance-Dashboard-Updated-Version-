@@ -400,7 +400,7 @@ app.get("/audit_logs", async (req, res) => {
 
 
 // =====================================================
-// FILE UPLOAD ROUTES
+// FILE UPLOAD ROUTE
 // =====================================================
 
 // POST /api/cash_advance_dashboard/:id/upload

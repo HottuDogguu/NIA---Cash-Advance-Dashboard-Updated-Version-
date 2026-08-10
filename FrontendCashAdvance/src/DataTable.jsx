@@ -49,7 +49,7 @@ export default function DataTable({ data, handleDelete, handleEdit, handleFileUp
   const totalPages = Math.ceil(data.length / PAGE_SIZE);
   const paginated  = data.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
 
-  // ── File upload handlers ─────────────────────────────────
+  // File upload handlers
   const triggerFileInput = (id) => {
     setPendingId(id);
     fileInputRef.current?.click();
@@ -92,37 +92,49 @@ export default function DataTable({ data, handleDelete, handleEdit, handleFileUp
       } ${scrollbar}`}>
         <table className="text-xs text-left" style={{ minWidth: "2450px" }}>
           <thead>
-            {/* ── Group headers ── */}
+            {/* ── Top-level group headers (Row 1) ── */}
             <tr style={{ background: headBg }} className="text-white font-bold text-center transition-colors duration-300">
-              <th className={`px-3 py-2 border ${borderColor}`} colSpan={3}>DV</th>
-              <th className={`px-3 py-2 border ${borderColor}`} colSpan={2}>Officials</th>
-              <th className={`px-3 py-2 border ${borderColor}`} rowSpan={2}>Description</th>
-              <th className={`px-3 py-2 border ${borderColor}`} colSpan={2}>Check</th>
-              <th className={`px-3 py-2 border ${borderColor}`} colSpan={3}>Financials</th>
-              <th className={`px-3 py-2 border ${borderColor}`} rowSpan={2}>Reimbursement</th>
-              <th className={`px-3 py-2 border ${borderColor}`} colSpan={3}>Collection Receipt</th>
-              <th className={`px-3 py-2 border ${borderColor}`} colSpan={3}>Liquidated</th>
-              <th className={`px-3 py-2 border ${borderColor}`} colSpan={2}>Status</th>
+              <th className={`px-3 py-2 border ${borderColor}`} rowSpan={3}>Fund</th>
+              <th className={`px-3 py-2 border ${borderColor}`} colSpan={2} rowSpan={2}>Officials</th>
+              <th className={`px-3 py-2 border ${borderColor}`} rowSpan={3}>Description</th>
+              <th className={`px-3 py-2 border ${borderColor}`} colSpan={2} rowSpan={2}>Financials</th>
+              <th className={`px-3 py-2 border ${borderColor}`} colSpan={4}>Reimbursement</th>
+              
+              {/* NEW REFUND HEADER MOVED HERE */}
+              <th className={`px-3 py-2 border ${borderColor}`} colSpan={4}>Refund</th>
+              
+              <th className={`px-3 py-2 border ${borderColor}`} colSpan={3} rowSpan={2}>Liquidated</th>
+              <th className={`px-3 py-2 border ${borderColor}`} colSpan={2} rowSpan={2}>Status</th>
               {hasFileActions && (
-                <th className={`px-3 py-2 border ${borderColor}`} rowSpan={2}>📎 Attachment</th>
+                <th className={`px-3 py-2 border ${borderColor}`} rowSpan={3}>📎 Attachment</th>
               )}
               {hasActions && (
-                <th className={`px-3 py-2 border ${borderColor}`} rowSpan={2}>Actions</th>
+                <th className={`px-3 py-2 border ${borderColor}`} rowSpan={3}>Actions</th>
               )}
             </tr>
 
-            {/* ── Column headers ── */}
-            <tr style={{ background: subHeadBg }} className={`${subHeadText} font-bold transition-colors duration-300`}>
+            {/* ── Mid-level group headers (Row 2) ── */}
+            <tr style={{ background: headBg }} className="text-white font-bold text-center transition-colors duration-300">
+              <th className={`px-3 py-2 border ${borderColor}`} colSpan={2}>Disbursement</th>
+              <th className={`px-3 py-2 border ${borderColor}`} colSpan={2}>Check</th>
+              
+              <th className={`px-3 py-2 border ${borderColor}`} colSpan={2}>Collection Receipt</th>
+              <th className={`px-3 py-2 border ${borderColor}`} rowSpan={2}>Amount</th>
+              <th className={`px-3 py-2 border ${borderColor}`} rowSpan={2}>Date Deposited</th>
+            </tr>
+
+            {/* ── Bottom-level column headers (Row 3) ── */}
+            <tr style={{ background: subHeadBg }} className={`${subHeadText} font-bold text-center transition-colors duration-300`}>
               {[
-                "Fund","DV Date","DV Number",
-                "Bonded Official","Responsible Officer",
-                "Check Date","Check Number",
-                "Amount","Spent","Refund",
-                "CR Date","CR Number","Date Deposited",
-                "Liquidated Date","BUR Number","Liquidation Report No.",
-                "Status","Date Submitted to COA",
-              ].map((h) => (
-                <th key={h} className={`px-3 py-2 border whitespace-nowrap ${borderColor2}`}>{h}</th>
+                "Bonded Official", "Responsible Officer",
+                "Amount", "Spent",
+                "Disbursement Date", "Disbursement Number",
+                "Check Date", "Check Number",
+                "CR Date", "CR Number",
+                "Liquidated Date", "BUR Number", "Liquidation Report No.",
+                "Status", "Date Submitted to COA",
+              ].map((h, idx) => (
+                <th key={idx} className={`px-3 py-2 border whitespace-nowrap ${borderColor2}`}>{h}</th>
               ))}
             </tr>
           </thead>
@@ -132,48 +144,40 @@ export default function DataTable({ data, handleDelete, handleEdit, handleFileUp
               <tr key={item.id} className={`transition-colors ${hoverBg}`}>
                 {/* Fund */}
                 <td className="px-3 py-3 border-r border-gray-100">{item.fund || "—"}</td>
-                {/* DV Date */}
-                <td className="px-3 py-3 border-r border-gray-100 whitespace-nowrap">{fmtDate(item.dv_date)}</td>
-                {/* DV Number */}
-                <td className={`px-3 py-3 border-r border-gray-100 font-semibold whitespace-nowrap ${dvText}`}>{item.dv_number}</td>
-                {/* Bonded Official */}
+                
+                {/* ── OFFICIALS ── */}
                 <td className="px-3 py-3 border-r border-gray-100 whitespace-nowrap">{item.bonded_official_name || "N/A"}</td>
-                {/* Accountable Officer */}
-                <td className="px-3 py-3 border-r border-gray-100 whitespace-nowrap">{item.accountable_official}</td>
+                <td className="px-3 py-3 border-r border-gray-100 whitespace-nowrap">{item.accountable_official || "—"}</td>
+                
                 {/* Description */}
                 <td className="px-3 py-3 border-r border-gray-100 max-w-[220px]">
                   <div className="truncate" title={item.description || ""}>{item.description || "—"}</div>
                 </td>
-                {/* Check Date */}
-                <td className="px-3 py-3 border-r border-gray-100 whitespace-nowrap">{fmtDate(item.check_date)}</td>
-                {/* Check Number */}
-                <td className="px-3 py-3 border-r border-gray-100">{item.check_number || "—"}</td>
-                {/* Amount */}
+                
+                {/* ── FINANCIALS ── */}
                 <td className="px-3 py-3 border-r border-gray-100 font-semibold text-green-700 whitespace-nowrap">{fmtMoney(item.amount)}</td>
-                {/* Spent */}
                 <td className="px-3 py-3 border-r border-gray-100 whitespace-nowrap">{fmtMoney(item.spent)}</td>
-                {/* Refund */}
+
+                {/* ── REIMBURSEMENT ── */}
+                <td className="px-3 py-3 border-r border-gray-100 whitespace-nowrap">{fmtDate(item.dv_date)}</td>
+                <td className={`px-3 py-3 border-r border-gray-100 font-semibold whitespace-nowrap ${dvText}`}>{item.dv_number || "—"}</td>
+                <td className="px-3 py-3 border-r border-gray-100 whitespace-nowrap">{fmtDate(item.check_date)}</td>
+                <td className="px-3 py-3 border-r border-gray-100">{item.check_number || "—"}</td>
+                
+                {/* ── REFUND ── */}
+                <td className="px-3 py-3 border-r border-gray-100 whitespace-nowrap">{fmtDate(item.collection_receipt_date)}</td>
+                <td className="px-3 py-3 border-r border-gray-100">{item.collection_receipt_number || "N/A"}</td>
                 <td className={`px-3 py-3 border-r border-gray-100 font-semibold whitespace-nowrap ${Number(item.refund || 0) > 0 ? "text-red-500" : ""}`}>
                   {fmtMoney(item.refund)}
                 </td>
-                {/* Reimbursement */}
-                <td className="px-3 py-3 border-r border-gray-100 text-center">
-                  <input type="checkbox" checked={item.is_reimbursement ? true : false} readOnly
-                    className={`w-4 h-4 rounded border-gray-300 ${theme === "green" ? "text-[#128A42]" : "text-purple-600"}`} />
-                </td>
-                {/* CR Date */}
-                <td className="px-3 py-3 border-r border-gray-100 whitespace-nowrap">{fmtDate(item.collection_receipt_date)}</td>
-                {/* CR Number */}
-                <td className="px-3 py-3 border-r border-gray-100">{item.collection_receipt_number || "N/A"}</td>
-                {/* Date Deposited */}
                 <td className="px-3 py-3 border-r border-gray-100 whitespace-nowrap">{fmtDate(item.date_deposited)}</td>
-                {/* Liquidated Date */}
+                
+                {/* ── LIQUIDATED ── */}
                 <td className="px-3 py-3 border-r border-gray-100 whitespace-nowrap">{fmtDate(item.liquidated_date)}</td>
-                {/* BUR Number */}
                 <td className="px-3 py-3 border-r border-gray-100">{item.bur_number || "—"}</td>
-                {/* Liquidation Report No. */}
                 <td className="px-3 py-3 border-r border-gray-100 whitespace-nowrap">{item.liquidation_report_number || "—"}</td>
-                {/* Status */}
+                
+                {/* ── STATUS ── */}
                 <td className="px-3 py-3 border-r border-gray-100">
                   <span className={`px-2 py-1 rounded-full text-xs font-semibold ${
                     item.status === "Done" ? "bg-green-100 text-green-700" : "bg-amber-100 text-amber-700"
@@ -181,14 +185,12 @@ export default function DataTable({ data, handleDelete, handleEdit, handleFileUp
                     {item.status === "Done" ? "✅ Done" : "⏳ Ongoing"}
                   </span>
                 </td>
-                {/* Date Submitted to COA */}
                 <td className="px-3 py-3 border-r border-gray-100 whitespace-nowrap">{fmtDate(item.date_submitted_to_coa)}</td>
 
                 {/* ── FILE ATTACHMENT COLUMN ── */}
                 {hasFileActions && (
                   <td className="px-3 py-3 border-r border-gray-100 min-w-[160px]">
                     {item.file_path ? (
-                      /* File exists — show View + Remove */
                       <div className="flex flex-col gap-1.5">
                         <a
                           href={`http://localhost:3000/uploads/${item.file_path}`}
@@ -209,7 +211,6 @@ export default function DataTable({ data, handleDelete, handleEdit, handleFileUp
                         )}
                       </div>
                     ) : (
-                      /* No file — show Attach button */
                       handleFileUpload && (
                         <button
                           onClick={() => triggerFileInput(item.id)}

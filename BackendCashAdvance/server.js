@@ -397,5 +397,88 @@ app.get("/audit_logs", async (req, res) => {
   } catch (e) { res.status(500).json({ message: e.message }); }
 });
 
+// =====================================================
+// FILE UPLOAD ROUTES
+// =====================================================
+
+// POST /api/cash_advance_dashboard/:id/upload
+// Attaches a file to a specific cash advance record
+app.post("/api/cash_advance_dashboard/:id/upload", upload.single("file"), async (req, res) => {
+  const { id } = req.params;
+
+  if (!req.file) {
+    return res.status(400).json({ message: "No file uploaded" });
+  }
+
+  try {
+    // Get existing record to check for old file
+    const [rows] = await pool.query(
+      "SELECT file_path FROM cash_advances WHERE id = ? AND deleted_at IS NULL",
+      [id]
+    );
+    if (!rows.length) {
+      return res.status(404).json({ message: "Record not found" });
+    }
+
+    // Delete the old file from disk if one exists
+    if (rows[0].file_path) {
+      const oldFilePath = path.join(uploadsDir, rows[0].file_path);
+      if (fs.existsSync(oldFilePath)) {
+        fs.unlinkSync(oldFilePath);
+      }
+    }
+
+    // Save new file path in the database
+    await pool.query(
+      "UPDATE cash_advances SET file_path = ? WHERE id = ?",
+      [req.file.filename, id]
+    );
+
+    res.json({
+      message: "File uploaded successfully",
+      file_path: req.file.filename,
+    });
+  } catch (e) {
+    console.error("File upload error:", e);
+    res.status(500).json({ message: e.message });
+  }
+});
+
+// DELETE /api/cash_advance_dashboard/:id/file
+// Removes the attached file from a cash advance record
+app.delete("/api/cash_advance_dashboard/:id/file", async (req, res) => {
+  const { id } = req.params;
+
+  try {
+    const [rows] = await pool.query(
+      "SELECT file_path FROM cash_advances WHERE id = ? AND deleted_at IS NULL",
+      [id]
+    );
+    if (!rows.length) {
+      return res.status(404).json({ message: "Record not found" });
+    }
+
+    // Delete the file from disk
+    if (rows[0].file_path) {
+      const filePath = path.join(uploadsDir, rows[0].file_path);
+      if (fs.existsSync(filePath)) {
+        fs.unlinkSync(filePath);
+      }
+    }
+
+    // Clear file_path in the database
+    await pool.query(
+      "UPDATE cash_advances SET file_path = NULL WHERE id = ?",
+      [id]
+    );
+
+    res.json({ message: "File removed successfully" });
+  } catch (e) {
+    console.error("File delete error:", e);
+    res.status(500).json({ message: e.message });
+  }
+});
+
+
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => console.log(`🚀 Server → http://localhost:${PORT}`));

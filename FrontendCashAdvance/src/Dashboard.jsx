@@ -45,7 +45,7 @@ export default function Dashboard() {
   const [toast,     setToast]     = useState(null);
   const [formData,  setFormData]  = useState(EMPTY_FORM);
 
-  const user = JSON.parse(localStorage.getItem("user") || "{}");
+  const user        = JSON.parse(localStorage.getItem("user") || "{}");
   const isAdmin     = user.role === "admin";
   const isCashStaff = user.role === "admin" || user.role === "cash_user";
 
@@ -54,7 +54,17 @@ export default function Dashboard() {
     setTimeout(() => setToast(null), 3000);
   };
 
-  // Section header inside the form modal (Dynamic Theme)
+  // ── Dynamic Sub-Components ───────────────────────────────
+  const StatCard = ({ label, value, sub, color }) => (
+    <div className={`bg-white rounded-2xl p-5 shadow-sm border flex flex-col gap-1 transition-colors ${
+      theme === 'green' ? 'border-[#86C99B]' : 'border-purple-100'
+    }`}>
+      <p className="text-xs font-semibold uppercase tracking-wider" style={{ color }}>{label}</p>
+      <p className="text-2xl font-bold text-gray-900">{value}</p>
+      {sub && <p className="text-xs text-gray-400">{sub}</p>}
+    </div>
+  );
+
   const SectionLabel = ({ children }) => (
     <div className="md:col-span-2 mt-2">
       <p className={`text-xs font-bold uppercase tracking-wider border-b pb-1 transition-colors ${
@@ -63,7 +73,9 @@ export default function Dashboard() {
     </div>
   );
 
-  // Fetch 
+  const inputFocusRing = theme === 'green' ? 'focus:ring-[#86C99B]' : 'focus:ring-purple-300';
+
+  // ── Fetch ────────────────────────────────────────────────
   const fetchData = useCallback(async () => {
     try {
       const params = searchQuery ? `?search=${encodeURIComponent(searchQuery)}` : "";
@@ -93,7 +105,7 @@ export default function Dashboard() {
   useEffect(() => { fetchData(); }, [fetchData]);
   useEffect(() => { fetchStats(); fetchOfficials(); }, [fetchStats, fetchOfficials]);
 
-  // Handlers 
+  // ── Form handlers ────────────────────────────────────────
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
     const val = type === "checkbox" ? checked : value;
@@ -101,11 +113,10 @@ export default function Dashboard() {
 
     if (name === "amount" || name === "spent") {
       const currentAmount = name === "amount" ? Number(value) : Number(formData.amount || 0);
-      const currentSpent = name === "spent" ? Number(value) : Number(formData.spent || 0);
+      const currentSpent  = name === "spent"  ? Number(value) : Number(formData.spent  || 0);
       const calculatedRefund = currentAmount - currentSpent;
       updatedData.refund = calculatedRefund > 0 ? calculatedRefund.toFixed(2) : "0.00";
     }
-
     setFormData(updatedData);
   };
 
@@ -117,27 +128,27 @@ export default function Dashboard() {
   const openEdit = (item) => {
     setIsEditing(true); setEditId(item.id);
     setFormData({
-      fund:                      item.fund || "",
-      dv_date:                   item.dv_date?.split("T")[0] || "",
-      dv_number:                 item.dv_number || "",
-      accountable_official:      item.accountable_official || "",
-      bonded_official_id:        item.bonded_official_id || "",
+      fund:                      item.fund                              || "",
+      dv_date:                   item.dv_date?.split("T")[0]           || "",
+      dv_number:                 item.dv_number                        || "",
+      accountable_official:      item.accountable_official             || "",
+      bonded_official_id:        item.bonded_official_id               || "",
       custom_official:           "",
-      description:               item.description || "",
-      check_date:                item.check_date?.split("T")[0] || "",
-      check_number:              item.check_number || "",
-      amount:                    item.amount || "",
-      spent:                     item.spent || "",
-      refund:                    item.refund || "",
+      description:               item.description                      || "",
+      check_date:                item.check_date?.split("T")[0]        || "",
+      check_number:              item.check_number                     || "",
+      amount:                    item.amount                           || "",
+      spent:                     item.spent                            || "",
+      refund:                    item.refund                           || "",
       is_reimbursement:          item.is_reimbursement ? true : false,
-      collection_receipt_date:   item.collection_receipt_date?.split("T")[0] || "",
-      collection_receipt_number: item.collection_receipt_number || "",
-      date_deposited:            item.date_deposited?.split("T")[0] || "",
-      liquidated_date:           item.liquidated_date?.split("T")[0] || "",
-      bur_number:                item.bur_number || "",
-      liquidation_report_number: item.liquidation_report_number || "",
-      status:                    item.status || "",
-      remarks:                   item.remarks || "",
+      collection_receipt_date:   item.collection_receipt_date?.split("T")[0]   || "",
+      collection_receipt_number: item.collection_receipt_number        || "",
+      date_deposited:            item.date_deposited?.split("T")[0]    || "",
+      liquidated_date:           item.liquidated_date?.split("T")[0]   || "",
+      bur_number:                item.bur_number                       || "",
+      liquidation_report_number: item.liquidation_report_number        || "",
+      status:                    item.status                           || "",
+      remarks:                   item.remarks                          || "",
       date_submitted_to_coa:     item.date_submitted_to_coa?.split("T")[0] || "",
     });
     setShowModal(true);
@@ -146,10 +157,7 @@ export default function Dashboard() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     const payload = { ...formData, user_id: user.id };
-    
-    if (payload.bonded_official_id === "NA") {
-      payload.bonded_official_id = null;
-    }
+    if (payload.bonded_official_id === "NA") payload.bonded_official_id = null;
 
     try {
       if (isEditing) {
@@ -177,18 +185,42 @@ export default function Dashboard() {
     }
   };
 
-  const fmt = (n) =>
-    "₱" + Number(n || 0).toLocaleString("en-PH", { minimumFractionDigits: 2 });
+  // ── File upload / delete handlers ─────────────────────────
+  const handleFileUpload = async (id, file) => {
+    const form = new FormData();
+    form.append("file", file);
+    try {
+      await axios.post(`${API}/api/cash_advance_dashboard/${id}/upload`, form, {
+        headers: { "Content-Type": "multipart/form-data" },
+      });
+      showToast("File attached successfully!");
+      fetchData();
+    } catch {
+      showToast("Failed to upload file. Please try again.", "error");
+    }
+  };
 
+  const handleFileDelete = async (id) => {
+    if (!window.confirm("Remove the attached file from this record?")) return;
+    try {
+      await axios.delete(`${API}/api/cash_advance_dashboard/${id}/file`);
+      showToast("File removed.");
+      fetchData();
+    } catch {
+      showToast("Failed to remove file.", "error");
+    }
+  };
+
+  // ── Chart data ───────────────────────────────────────────
+  const fmt = (n) => "₱" + Number(n || 0).toLocaleString("en-PH", { minimumFractionDigits: 2 });
   const chartData = [...data].reverse().slice(0, 6).map((d) => ({
-    name: d.dv_number,
+    name:   d.dv_number,
     amount: Number(d.amount || 0),
     spent:  Number(d.spent  || 0),
     refund: Number(d.refund || 0),
   }));
 
-  const inputFocusRing = theme === 'green' ? 'focus:ring-[#86C99B]' : 'focus:ring-purple-300';
-
+  // ── Render ───────────────────────────────────────────────
   return (
     <div className="flex flex-col gap-6 min-h-full">
       <Toast toast={toast} />
@@ -196,35 +228,22 @@ export default function Dashboard() {
       {/* STAT CARDS */}
       {stats && (
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-          <div className="bg-white rounded-2xl p-5 shadow-sm border border-purple-100 flex flex-col gap-1">
-            <p className="text-xs font-semibold uppercase tracking-wider" style={{ color: "#7c3aed" }}>Total Records</p>
-            <p className="text-2xl font-bold text-gray-900">{stats.totalRecords}</p>
-            <p className="text-xs text-gray-400">Total: {fmt(stats.totalAmount)}</p>
-          </div>
-          <div className="bg-white rounded-2xl p-5 shadow-sm border border-purple-100 flex flex-col gap-1">
-            <p className="text-xs font-semibold uppercase tracking-wider" style={{ color: "#d97706" }}>Ongoing</p>
-            <p className="text-2xl font-bold text-gray-900">{stats.ongoingCount}</p>
-            <p className="text-xs text-gray-400">Amount: {fmt(stats.ongoingAmount)}</p>
-          </div>
-          <div className="bg-white rounded-2xl p-5 shadow-sm border border-purple-100 flex flex-col gap-1">
-            <p className="text-xs font-semibold uppercase tracking-wider" style={{ color: "#059669" }}>Completed</p>
-            <p className="text-2xl font-bold text-gray-900">{stats.completedCount}</p>
-            <p className="text-xs text-gray-400">Amount: {fmt(stats.completedAmount)}</p>
-          </div>
-          <div className="bg-white rounded-2xl p-5 shadow-sm border border-purple-100 flex flex-col gap-1">
-            <p className="text-xs font-semibold uppercase tracking-wider" style={{ color: "#dc2626" }}>Total Refunds</p>
-            <p className="text-2xl font-bold text-gray-900">{fmt(stats.totalRefunds)}</p>
-          </div>
+          <StatCard label="Total Records" value={stats.totalRecords}         color="#7c3aed" sub={`Total: ${fmt(stats.totalAmount)}`} />
+          <StatCard label="Ongoing"       value={stats.ongoingCount}         color="#d97706" sub={`Amount: ${fmt(stats.ongoingAmount)}`} />
+          <StatCard label="Completed"     value={stats.completedCount}       color="#059669" sub={`Amount: ${fmt(stats.completedAmount)}`} />
+          <StatCard label="Total Refunds" value={fmt(stats.totalRefunds)}    color="#dc2626" />
         </div>
       )}
 
       {/* CHARTS */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <div className="bg-white rounded-3xl p-6 shadow-sm border border-purple-100 h-72">
+        <div className={`bg-white rounded-3xl p-6 shadow-sm border h-72 transition-colors ${
+          theme === 'green' ? 'border-[#86C99B]' : 'border-purple-100'
+        }`}>
           <h2 className="font-semibold text-gray-700 mb-3 text-sm">Recent Cash Advances – Trend</h2>
           <ResponsiveContainer width="100%" height="100%">
             <LineChart data={chartData}>
-              <CartesianGrid strokeDasharray="3 3" stroke="#f0e6ff" />
+              <CartesianGrid strokeDasharray="3 3" stroke={theme === 'green' ? '#E3F5E9' : '#f0e6ff'} />
               <XAxis dataKey="name" tick={{ fontSize: 11 }} />
               <YAxis tick={{ fontSize: 11 }} />
               <Tooltip formatter={(v) => fmt(v)} />
@@ -236,7 +255,9 @@ export default function Dashboard() {
           </ResponsiveContainer>
         </div>
 
-        <div className="bg-white rounded-3xl p-6 shadow-sm border border-purple-100 h-72">
+        <div className={`bg-white rounded-3xl p-6 shadow-sm border h-72 transition-colors ${
+          theme === 'green' ? 'border-[#86C99B]' : 'border-purple-100'
+        }`}>
           <h2 className="font-semibold text-gray-700 mb-3 text-sm">Monthly Summary – Bar</h2>
           <ResponsiveContainer width="100%" height="100%">
             <BarChart data={chartData}>
@@ -267,18 +288,18 @@ export default function Dashboard() {
 
       {/* TABLE */}
       <div className={`bg-white rounded-3xl p-6 shadow-sm border flex-1 transition-colors ${
-        theme === 'green' ? 'border-[#86C99B]' : 'border-purple-100'
+        theme === "green" ? "border-[#86C99B]" : "border-purple-100"
       }`}>
         <div className="flex items-center justify-between mb-5">
           <h2 className={`text-lg font-bold transition-colors ${
-            theme === 'green' ? 'text-[#128A42]' : 'text-purple-900'
+            theme === "green" ? "text-[#128A42]" : "text-purple-900"
           }`}>
             Cash Advance Records
           </h2>
           <button
             onClick={openAdd}
             className={`text-white px-5 py-2 rounded-xl shadow-md transition font-semibold text-sm ${
-              theme === 'green' ? 'bg-[#128A42] hover:bg-[#0C6B31]' : 'bg-purple-600 hover:bg-purple-700'
+              theme === "green" ? "bg-[#128A42] hover:bg-[#0C6B31]" : "bg-purple-600 hover:bg-purple-700"
             }`}
           >
             + Add Cash Advance
@@ -288,12 +309,18 @@ export default function Dashboard() {
         {loading ? (
           <div className="text-center py-16 text-gray-400">
             <div className={`animate-spin w-8 h-8 border-4 rounded-full mx-auto mb-3 ${
-              theme === 'green' ? 'border-[#E3F5E9] border-t-[#128A42]' : 'border-purple-200 border-t-purple-600'
+              theme === "green" ? "border-[#E3F5E9] border-t-[#128A42]" : "border-purple-200 border-t-purple-600"
             }`} />
             Loading records…
           </div>
         ) : (
-          <DataTable data={data} handleDelete={handleDelete} handleEdit={openEdit} />
+          <DataTable
+            data={data}
+            handleDelete={handleDelete}
+            handleEdit={openEdit}
+            handleFileUpload={isCashStaff ? handleFileUpload : null}
+            handleFileDelete={isCashStaff ? handleFileDelete : null}
+          />
         )}
       </div>
 
@@ -302,7 +329,6 @@ export default function Dashboard() {
         <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-3xl p-8 w-full max-w-2xl shadow-2xl max-h-[90vh] overflow-y-auto">
 
-            {/* Modal Header */}
             <div className="flex justify-between items-center mb-6">
               <h2 className={`text-xl font-bold transition-colors ${
                 theme === 'green' ? 'text-[#128A42]' : 'text-purple-900'
@@ -315,7 +341,6 @@ export default function Dashboard() {
 
             <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-2 gap-4">
 
-              {/* === BASIC INFO === */}
               <SectionLabel>Disbursement Details</SectionLabel>
 
               <div className="flex flex-col gap-1">
@@ -341,20 +366,20 @@ export default function Dashboard() {
 
               <div className="flex flex-col gap-1">
                 <label className="text-xs font-semibold text-gray-600">DV Number *</label>
-                <input type="text" name="dv_number" placeholder="e.g. DV-2026-007"
+                <input type="text" name="dv_number" placeholder="e.g. 2026-01-0001"
                   value={formData.dv_number} onChange={handleChange} required
                   className={`border border-gray-200 p-3 rounded-xl text-sm focus:outline-none focus:ring-2 ${inputFocusRing}`} />
               </div>
 
               <div className="flex flex-col gap-1">
                 <label className="text-xs font-semibold text-gray-600">Bonded Official</label>
-                <select name="bonded_official_id" value={formData.bonded_official_id}
-                  onChange={handleChange}
+                <select name="bonded_official_id" value={formData.bonded_official_id} onChange={handleChange}
                   className={`border border-gray-200 p-3 rounded-xl text-sm focus:outline-none focus:ring-2 ${inputFocusRing}`}>
                   <option value="">— Select bonded official —</option>
                   <option value="NA">N/A (Not Applicable)</option>
                   {officials.map((o) => (
-                    <option key={o.id} value={o.id} disabled={!o.is_available && String(o.id) !== String(formData.bonded_official_id)}>
+                    <option key={o.id} value={o.id}
+                      disabled={!o.is_available && String(o.id) !== String(formData.bonded_official_id)}>
                       {o.name} {!o.is_available ? "(Unavailable)" : ""}
                     </option>
                   ))}
@@ -364,11 +389,9 @@ export default function Dashboard() {
               {formData.bonded_official_id === "NA" && (
                 <div className="flex flex-col gap-1">
                   <label className="text-xs font-semibold text-gray-600">Specify Official Name (Optional)</label>
-                  <input 
-                    type="text" name="custom_official" placeholder="Enter official name..." 
+                  <input type="text" name="custom_official" placeholder="Enter official name..."
                     value={formData.custom_official} onChange={handleChange}
-                    className={`border border-gray-200 p-3 rounded-xl text-sm focus:outline-none focus:ring-2 ${inputFocusRing}`} 
-                  />
+                    className={`border border-gray-200 p-3 rounded-xl text-sm focus:outline-none focus:ring-2 ${inputFocusRing}`} />
                 </div>
               )}
 
@@ -379,7 +402,6 @@ export default function Dashboard() {
                   className={`border border-gray-200 p-3 rounded-xl text-sm focus:outline-none focus:ring-2 ${inputFocusRing}`} />
               </div>
 
-              {/* === CHECKS === */}
               <SectionLabel>Check Details</SectionLabel>
 
               <div className="flex flex-col gap-1">
@@ -394,7 +416,6 @@ export default function Dashboard() {
                   className={`border border-gray-200 p-3 rounded-xl text-sm focus:outline-none focus:ring-2 ${inputFocusRing}`} />
               </div>
 
-              {/* === FINANCIALS === */}
               <SectionLabel>Financials</SectionLabel>
 
               <div className="flex flex-col gap-1">
@@ -412,28 +433,23 @@ export default function Dashboard() {
               </div>
 
               <div className="flex flex-col gap-1">
-                <label className="text-xs font-semibold text-gray-600">Refund (₱)</label>
-                <input type="number" name="refund" placeholder="0.00" step="0.01" 
+                <label className="text-xs font-semibold text-gray-600">Refund (₱) — auto-calculated</label>
+                <input type="number" name="refund" placeholder="0.00" step="0.01"
                   value={formData.refund} readOnly
                   className="border border-gray-200 p-3 rounded-xl text-sm bg-gray-100 text-gray-500 cursor-not-allowed focus:outline-none" />
               </div>
 
               <div className="flex flex-col gap-1 justify-center">
                 <label className="flex items-center gap-2 cursor-pointer mt-4">
-                  <input 
-                    type="checkbox" 
-                    name="is_reimbursement" 
-                    checked={formData.is_reimbursement} 
-                    onChange={handleChange}
+                  <input type="checkbox" name="is_reimbursement"
+                    checked={formData.is_reimbursement} onChange={handleChange}
                     className={`w-5 h-5 rounded border-gray-300 cursor-pointer ${
                       theme === 'green' ? 'text-[#128A42] focus:ring-[#86C99B]' : 'text-purple-600 focus:ring-purple-400'
-                    }`}
-                  />
+                    }`} />
                   <span className="text-sm font-semibold text-gray-700">Reimbursement</span>
                 </label>
               </div>
 
-              {/* === COLLECTION RECEIPT === */}
               <SectionLabel>Collection Receipt</SectionLabel>
 
               <div className="flex flex-col gap-1">
@@ -454,7 +470,6 @@ export default function Dashboard() {
                   className={`border border-gray-200 p-3 rounded-xl text-sm focus:outline-none focus:ring-2 ${inputFocusRing}`} />
               </div>
 
-              {/* === LIQUIDATION === */}
               <SectionLabel>Liquidation</SectionLabel>
 
               <div className="flex flex-col gap-1">
@@ -475,8 +490,7 @@ export default function Dashboard() {
                   className={`border border-gray-200 p-3 rounded-xl text-sm focus:outline-none focus:ring-2 ${inputFocusRing}`} />
               </div>
 
-              {/* === STATUS & COA === */}
-              <SectionLabel>Status & Completion</SectionLabel>
+              <SectionLabel>Status &amp; Completion</SectionLabel>
 
               <div className="flex flex-col gap-1">
                 <label className="text-xs font-semibold text-gray-600">Status *</label>
@@ -502,7 +516,6 @@ export default function Dashboard() {
                   className={`border border-gray-200 p-3 rounded-xl text-sm focus:outline-none focus:ring-2 resize-none ${inputFocusRing}`} />
               </div>
 
-              {/* Buttons */}
               <div className={`md:col-span-2 flex gap-3 justify-end mt-2 pt-4 border-t transition-colors ${
                 theme === 'green' ? 'border-[#86C99B]/40' : 'border-purple-100'
               }`}>

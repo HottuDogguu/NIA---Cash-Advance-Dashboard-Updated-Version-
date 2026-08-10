@@ -22,6 +22,24 @@ function Toast({ toast }) {
   );
 }
 
+function StatCard({ label, value, sub, color }) {
+  return (
+    <div className="bg-white rounded-2xl p-5 shadow-sm border border-purple-100 flex flex-col gap-1">
+      <p className="text-xs font-semibold uppercase tracking-wider" style={{ color }}>{label}</p>
+      <p className="text-2xl font-bold text-gray-900">{value}</p>
+      {sub && <p className="text-xs text-gray-400">{sub}</p>}
+    </div>
+  );
+}
+
+function SectionLabel({ children }) {
+  return (
+    <div className="md:col-span-2 mt-2">
+      <p className="text-xs font-bold uppercase tracking-wider text-purple-700 border-b border-purple-100 pb-1">{children}</p>
+    </div>
+  );
+}
+
 const EMPTY_FORM = {
   fund: "", dv_date: "", dv_number: "",
   bonded_official_id: "", accountable_official: "", custom_official: "", description: "",
@@ -35,8 +53,8 @@ const EMPTY_FORM = {
 export default function Dashboard() {
   const { theme } = useTheme();
   const { searchQuery } = useSearch();
-  const [data,      setData]      = useState([]);
-  const [stats,     setStats]     = useState(null);
+  const [data,       setData]       = useState([]);
+  const [stats,      setStats]      = useState(null);
   const [officials, setOfficials] = useState([]);
   const [loading,   setLoading]   = useState(true);
   const [showModal, setShowModal] = useState(false);
@@ -45,68 +63,23 @@ export default function Dashboard() {
   const [toast,     setToast]     = useState(null);
   const [formData,  setFormData]  = useState(EMPTY_FORM);
 
+  // ── ROLE & PERMISSION LOGIC ──────────────────────────────
   const user        = JSON.parse(localStorage.getItem("user") || "{}");
+  
+  const isITRole    = user.role === "it_role";
   const isAdmin     = user.role === "admin";
-  const isCashStaff = user.role === "admin" || user.role === "cash_user";
+  const isCashStaff = user.role === "cash_user" || user.role === "cash_staff";
 
-  // ── Permission Helpers ───────────────────────────────────
-  const userPerms = (() => {
-    try {
-      const p = user.permissions;
-      if (!p) return {};
-      return typeof p === "string" ? JSON.parse(p) : p;
-    } catch { return {}; }
-  })();
-
-  const can = (section) => {
-    if (isAdmin) return true;
-    return userPerms[section] === true;
-  };
+  const canDelete      = isITRole || isAdmin;
+  const canEdit        = isITRole || isAdmin || isCashStaff;
+  const canUploadFiles = isITRole || isAdmin || isCashStaff;
+  const canAdd         = isITRole || isAdmin || isCashStaff;
+  // ─────────────────────────────────────────────────────────
 
   const showToast = (message, type = "success") => {
     setToast({ message, type });
     setTimeout(() => setToast(null), 3000);
   };
-
-  // ── Dynamic Sub-Components ───────────────────────────────
-  const StatCard = ({ label, value, sub, color }) => (
-    <div className={`bg-white rounded-2xl p-5 shadow-sm border flex flex-col gap-1 transition-colors ${
-      theme === 'green' ? 'border-[#86C99B]' : 'border-purple-100'
-    }`}>
-      <p className="text-xs font-semibold uppercase tracking-wider" style={{ color }}>{label}</p>
-      <p className="text-2xl font-bold text-gray-900">{value}</p>
-      {sub && <p className="text-xs text-gray-400">{sub}</p>}
-    </div>
-  );
-
-  const inputFocusRing = theme === 'green' ? 'focus:ring-[#86C99B]' : 'focus:ring-purple-300';
-
-  const SectionLabel = ({ sectionKey, children }) => {
-    const permitted = can(sectionKey);
-    return (
-      <div className="md:col-span-2 mt-2">
-        <div className="flex items-center gap-2 border-b pb-1">
-          <p className={`text-xs font-bold uppercase tracking-wider flex-1 transition-colors ${
-            theme === 'green' ? 'text-[#128A42]' : 'text-purple-700'
-          }`}>{children}</p>
-          {!permitted && (
-            <span className="text-xs text-gray-400 flex items-center gap-1 font-medium">
-              🔒 View only
-            </span>
-          )}
-        </div>
-      </div>
-    );
-  };
-
-  const fieldCls = (sectionKey, extra = "") => ({
-    disabled: !can(sectionKey),
-    className: `border border-gray-200 p-3 rounded-xl text-sm focus:outline-none focus:ring-2 transition-colors w-full ${
-      !can(sectionKey)
-        ? "bg-gray-100 text-gray-400 cursor-not-allowed opacity-70"
-        : inputFocusRing
-    } ${extra}`,
-  });
 
   // ── Fetch ────────────────────────────────────────────────
   const fetchData = useCallback(async () => {
@@ -161,27 +134,27 @@ export default function Dashboard() {
   const openEdit = (item) => {
     setIsEditing(true); setEditId(item.id);
     setFormData({
-      fund:                      item.fund                               || "",
-      dv_date:                   item.dv_date?.split("T")[0]               || "",
-      dv_number:                 item.dv_number                        || "",
-      accountable_official:      item.accountable_official             || "",
-      bonded_official_id:        item.bonded_official_id               || "",
-      custom_official:           "",
-      description:               item.description                      || "",
-      check_date:                item.check_date?.split("T")[0]        || "",
-      check_number:              item.check_number                     || "",
-      amount:                    item.amount                           || "",
-      spent:                     item.spent                            || "",
-      refund:                    item.refund                           || "",
-      collection_receipt_date:   item.collection_receipt_date?.split("T")[0]   || "",
-      collection_receipt_number: item.collection_receipt_number        || "",
-      date_deposited:            item.date_deposited?.split("T")[0]    || "",
-      liquidated_date:           item.liquidated_date?.split("T")[0]   || "",
-      bur_number:                item.bur_number                       || "",
-      liquidation_report_number: item.liquidation_report_number        || "",
-      status:                    item.status                           || "",
-      remarks:                   item.remarks                          || "",
-      date_submitted_to_coa:     item.date_submitted_to_coa?.split("T")[0] || "",
+      fund:                       item.fund                             || "",
+      dv_date:                    item.dv_date?.split("T")[0]           || "",
+      dv_number:                  item.dv_number                        || "",
+      accountable_official:       item.accountable_official             || "",
+      bonded_official_id:         item.bonded_official_id               || "",
+      custom_official:            "",
+      description:                item.description                      || "",
+      check_date:                 item.check_date?.split("T")[0]        || "",
+      check_number:               item.check_number                     || "",
+      amount:                     item.amount                           || "",
+      spent:                      item.spent                            || "",
+      refund:                     item.refund                           || "",
+      collection_receipt_date:    item.collection_receipt_date?.split("T")[0]   || "",
+      collection_receipt_number:  item.collection_receipt_number        || "",
+      date_deposited:             item.date_deposited?.split("T")[0]    || "",
+      liquidated_date:            item.liquidated_date?.split("T")[0]   || "",
+      bur_number:                 item.bur_number                       || "",
+      liquidation_report_number:  item.liquidation_report_number        || "",
+      status:                     item.status                           || "",
+      remarks:                    item.remarks                          || "",
+      date_submitted_to_coa:      item.date_submitted_to_coa?.split("T")[0] || "",
     });
     setShowModal(true);
   };
@@ -217,7 +190,7 @@ export default function Dashboard() {
     }
   };
 
-  // ── File upload / delete handlers ─────────────────────────
+  // File upload / delete handlers 
   const handleFileUpload = async (id, file) => {
     const form = new FormData();
     form.append("file", file);
@@ -243,7 +216,7 @@ export default function Dashboard() {
     }
   };
 
-  // ── Chart data ───────────────────────────────────────────
+  // Chart data
   const fmt = (n) => "₱" + Number(n || 0).toLocaleString("en-PH", { minimumFractionDigits: 2 });
   const chartData = [...data].reverse().slice(0, 6).map((d) => ({
     name:   d.dv_number,
@@ -252,9 +225,7 @@ export default function Dashboard() {
     refund: Number(d.refund || 0),
   }));
 
-  const canAddRecord = isAdmin || Object.values(userPerms).some(Boolean);
-
-  // ── Render ───────────────────────────────────────────────
+  // Render
   return (
     <div className="flex flex-col gap-6 min-h-full">
       <Toast toast={toast} />
@@ -271,13 +242,11 @@ export default function Dashboard() {
 
       {/* CHARTS */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <div className={`bg-white rounded-3xl p-6 shadow-sm border h-72 transition-colors ${
-          theme === 'green' ? 'border-[#86C99B]' : 'border-purple-100'
-        }`}>
+        <div className="bg-white rounded-3xl p-6 shadow-sm border border-purple-100 h-72">
           <h2 className="font-semibold text-gray-700 mb-3 text-sm">Recent Cash Advances – Trend</h2>
           <ResponsiveContainer width="100%" height="100%">
             <LineChart data={chartData}>
-              <CartesianGrid strokeDasharray="3 3" stroke={theme === 'green' ? '#E3F5E9' : '#f0e6ff'} />
+              <CartesianGrid strokeDasharray="3 3" stroke="#f0e6ff" />
               <XAxis dataKey="name" tick={{ fontSize: 11 }} />
               <YAxis tick={{ fontSize: 11 }} />
               <Tooltip formatter={(v) => fmt(v)} />
@@ -289,20 +258,18 @@ export default function Dashboard() {
           </ResponsiveContainer>
         </div>
 
-        <div className={`bg-white rounded-3xl p-6 shadow-sm border h-72 transition-colors ${
-          theme === 'green' ? 'border-[#86C99B]' : 'border-purple-100'
-        }`}>
+        <div className="bg-white rounded-3xl p-6 shadow-sm border border-purple-100 h-72">
           <h2 className="font-semibold text-gray-700 mb-3 text-sm">Monthly Summary – Bar</h2>
           <ResponsiveContainer width="100%" height="100%">
             <BarChart data={chartData}>
-              <CartesianGrid strokeDasharray="3 3" stroke={theme === 'green' ? '#E3F5E9' : '#f0e6ff'} />
+              <CartesianGrid strokeDasharray="3 3" stroke="#f0e6ff" />
               <XAxis dataKey="name" tick={{ fontSize: 11 }} />
               <YAxis tick={{ fontSize: 11 }} />
               <Tooltip formatter={(v) => fmt(v)} />
               <Legend />
-              <Bar dataKey="amount" fill={theme === 'green' ? '#C4E8D1' : '#d8b4fe'} radius={[4,4,0,0]} />
-              <Bar dataKey="spent"  fill={theme === 'green' ? '#86C99B' : '#a855f7'} radius={[4,4,0,0]} />
-              <Bar dataKey="refund" fill={theme === 'green' ? '#128A42' : '#581c87'} radius={[4,4,0,0]} />
+              <Bar dataKey="amount" fill="#d8b4fe" radius={[4,4,0,0]} />
+              <Bar dataKey="spent"  fill="#a855f7" radius={[4,4,0,0]} />
+              <Bar dataKey="refund" fill="#581c87" radius={[4,4,0,0]} />
             </BarChart>
           </ResponsiveContainer>
         </div>
@@ -318,7 +285,7 @@ export default function Dashboard() {
           }`}>
             Cash Advance Records
           </h2>
-          {canAddRecord && (
+          {canAdd && (
             <button
               onClick={openAdd}
               className={`text-white px-5 py-2 rounded-xl shadow-md transition font-semibold text-sm ${
@@ -340,10 +307,10 @@ export default function Dashboard() {
         ) : (
           <DataTable
             data={data}
-            handleDelete={handleDelete}
-            handleEdit={openEdit}
-            handleFileUpload={isCashStaff ? handleFileUpload : null}
-            handleFileDelete={isCashStaff ? handleFileDelete : null}
+            handleDelete={canDelete ? handleDelete : null}
+            handleEdit={canEdit ? openEdit : null}
+            handleFileUpload={canUploadFiles ? handleFileUpload : null}
+            handleFileDelete={canUploadFiles ? handleFileDelete : null}
           />
         )}
       </div>
@@ -353,19 +320,10 @@ export default function Dashboard() {
         <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-3xl p-8 w-full max-w-2xl shadow-2xl max-h-[90vh] overflow-y-auto">
 
-            <div className="flex justify-between items-center mb-4">
-              <div>
-                <h2 className={`text-xl font-bold transition-colors ${
-                  theme === 'green' ? 'text-[#128A42]' : 'text-purple-900'
-                }`}>
-                  {isEditing ? "Edit Cash Advance" : "Add Cash Advance"}
-                </h2>
-                {!isAdmin && (
-                  <p className="text-xs text-gray-400 mt-0.5">
-                    🔒 Grayed sections are view-only based on your access level
-                  </p>
-                )}
-              </div>
+            <div className="flex justify-between items-center mb-6">
+              <h2 className="text-xl font-bold text-purple-900">
+                {isEditing ? "Edit Cash Advance" : "Add Cash Advance"}
+              </h2>
               <button onClick={() => setShowModal(false)}
                 className="text-3xl text-gray-400 hover:text-red-500 transition leading-none">×</button>
             </div>
@@ -373,32 +331,26 @@ export default function Dashboard() {
             <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-2 gap-4">
 
               {/* ── GENERAL DETAILS ── */}
-              <SectionLabel sectionKey="general_details">General Details</SectionLabel>
+              <SectionLabel>General Details</SectionLabel>
 
               <div className="flex flex-col gap-1">
                 <label className="text-xs font-semibold text-gray-600">Fund</label>
                 <input type="text" name="fund" placeholder="e.g. 501 COB"
                   value={formData.fund} onChange={handleChange}
-                  {...fieldCls("general_details")} />
+                  className="border border-gray-200 p-3 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-purple-300" />
               </div>
 
               <div className="flex flex-col gap-1">
-                <label className="text-xs font-semibold text-gray-600">
-                  Accountable Official {can("general_details") && <span className="text-red-500">*</span>}
-                </label>
+                <label className="text-xs font-semibold text-gray-600">Accountable Official *</label>
                 <input type="text" name="accountable_official" placeholder="Full name"
-                  value={formData.accountable_official} onChange={handleChange}
-                  required={can("general_details")}
-                  {...fieldCls("general_details")} />
+                  value={formData.accountable_official} onChange={handleChange} required
+                  className="border border-gray-200 p-3 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-purple-300" />
               </div>
 
               <div className="flex flex-col gap-1">
                 <label className="text-xs font-semibold text-gray-600">Bonded Official</label>
                 <select name="bonded_official_id" value={formData.bonded_official_id} onChange={handleChange}
-                  disabled={!can("general_details")}
-                  className={`border border-gray-200 p-3 rounded-xl text-sm focus:outline-none focus:ring-2 transition-colors ${
-                    !can("general_details") ? "bg-gray-100 text-gray-400 cursor-not-allowed opacity-70" : inputFocusRing
-                  }`}>
+                  className="border border-gray-200 p-3 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-purple-300">
                   <option value="">— Select bonded official —</option>
                   <option value="NA">N/A (Not Applicable)</option>
                   {officials.map((o) => (
@@ -410,12 +362,12 @@ export default function Dashboard() {
                 </select>
               </div>
 
-              {formData.bonded_official_id === "NA" && can("general_details") && (
+              {formData.bonded_official_id === "NA" && (
                 <div className="flex flex-col gap-1">
                   <label className="text-xs font-semibold text-gray-600">Specify Official Name (Optional)</label>
                   <input type="text" name="custom_official" placeholder="Enter official name..."
                     value={formData.custom_official} onChange={handleChange}
-                    {...fieldCls("general_details")} />
+                    className="border border-gray-200 p-3 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-purple-300" />
                 </div>
               )}
 
@@ -423,70 +375,68 @@ export default function Dashboard() {
                 <label className="text-xs font-semibold text-gray-600">Description</label>
                 <input type="text" name="description" placeholder="Purpose of cash advance"
                   value={formData.description} onChange={handleChange}
-                  {...fieldCls("general_details")} />
+                  className="border border-gray-200 p-3 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-purple-300" />
               </div>
 
               {/* ── FINANCIALS ── */}
-              <SectionLabel sectionKey="financials">Financials</SectionLabel>
+              <SectionLabel>Financials</SectionLabel>
 
               <div className="flex flex-col gap-1">
-                <label className="text-xs font-semibold text-gray-600">
-                  Amount (₱) {can("financials") && <span className="text-red-500">*</span>}
-                </label>
+                <label className="text-xs font-semibold text-gray-600">Amount (₱) *</label>
                 <input type="number" name="amount" placeholder="0.00" step="0.01" min="0"
-                  value={formData.amount} onChange={handleChange}
-                  required={can("financials")}
-                  {...fieldCls("financials")} />
+                  value={formData.amount} onChange={handleChange} required
+                  className="border border-gray-200 p-3 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-purple-300" />
               </div>
 
               <div className="flex flex-col gap-1">
                 <label className="text-xs font-semibold text-gray-600">Spent (₱)</label>
                 <input type="number" name="spent" placeholder="0.00" step="0.01" min="0"
                   value={formData.spent} onChange={handleChange}
-                  {...fieldCls("financials")} />
+                  className="border border-gray-200 p-3 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-purple-300" />
               </div>
 
               {/* ── REIMBURSEMENT DETAILS ── */}
-              <SectionLabel sectionKey="reimbursement_details">Reimbursement Details</SectionLabel>
+              <SectionLabel>Reimbursement Details</SectionLabel>
 
               <div className="flex flex-col gap-1">
-                <label className="text-xs font-semibold text-gray-600">Disbursement Date</label>
-                <input type="date" name="dv_date" value={formData.dv_date} onChange={handleChange}
-                  {...fieldCls("reimbursement_details")} />
+                <label className="text-xs font-semibold text-gray-600">Disbursement Date *</label>
+                <input type="date" name="dv_date" value={formData.dv_date}
+                  onChange={handleChange} required
+                  className="border border-gray-200 p-3 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-purple-300" />
               </div>
 
               <div className="flex flex-col gap-1">
-                <label className="text-xs font-semibold text-gray-600">Disbursement Number</label>
+                <label className="text-xs font-semibold text-gray-600">Disbursement Number *</label>
                 <input type="text" name="dv_number" placeholder="e.g. 2026-01-0001"
-                  value={formData.dv_number} onChange={handleChange}
-                  {...fieldCls("reimbursement_details")} />
+                  value={formData.dv_number} onChange={handleChange} required
+                  className="border border-gray-200 p-3 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-purple-300" />
               </div>
 
               <div className="flex flex-col gap-1">
                 <label className="text-xs font-semibold text-gray-600">Check Date</label>
                 <input type="date" name="check_date" value={formData.check_date} onChange={handleChange}
-                  {...fieldCls("reimbursement_details")} />
+                  className="border border-gray-200 p-3 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-purple-300" />
               </div>
 
               <div className="flex flex-col gap-1">
                 <label className="text-xs font-semibold text-gray-600">Check Number</label>
                 <input type="text" name="check_number" placeholder="Check number" value={formData.check_number} onChange={handleChange}
-                  {...fieldCls("reimbursement_details")} />
+                  className="border border-gray-200 p-3 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-purple-300" />
               </div>
 
               {/* ── REFUND DETAILS ── */}
-              <SectionLabel sectionKey="refund_details">Refund Details</SectionLabel>
+              <SectionLabel>Refund Details</SectionLabel>
 
               <div className="flex flex-col gap-1">
                 <label className="text-xs font-semibold text-gray-600">CR Date</label>
                 <input type="date" name="collection_receipt_date" value={formData.collection_receipt_date} onChange={handleChange}
-                  {...fieldCls("refund_details")} />
+                  className="border border-gray-200 p-3 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-purple-300" />
               </div>
 
               <div className="flex flex-col gap-1">
                 <label className="text-xs font-semibold text-gray-600">CR Number</label>
                 <input type="text" name="collection_receipt_number" placeholder="CR number" value={formData.collection_receipt_number} onChange={handleChange}
-                  {...fieldCls("refund_details")} />
+                  className="border border-gray-200 p-3 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-purple-300" />
               </div>
 
               <div className="flex flex-col gap-1">
@@ -499,43 +449,37 @@ export default function Dashboard() {
               <div className="flex flex-col gap-1">
                 <label className="text-xs font-semibold text-gray-600">Date Deposited</label>
                 <input type="date" name="date_deposited" value={formData.date_deposited} onChange={handleChange}
-                  {...fieldCls("refund_details")} />
+                  className="border border-gray-200 p-3 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-purple-300" />
               </div>
 
               {/* ── LIQUIDATION ── */}
-              <SectionLabel sectionKey="liquidation">Liquidation</SectionLabel>
+              <SectionLabel>Liquidation</SectionLabel>
 
               <div className="flex flex-col gap-1">
                 <label className="text-xs font-semibold text-gray-600">Liquidated Date</label>
                 <input type="date" name="liquidated_date" value={formData.liquidated_date} onChange={handleChange}
-                  {...fieldCls("liquidation")} />
+                  className="border border-gray-200 p-3 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-purple-300" />
               </div>
 
               <div className="flex flex-col gap-1">
                 <label className="text-xs font-semibold text-gray-600">BUR Number</label>
                 <input type="text" name="bur_number" placeholder="BUR number" value={formData.bur_number} onChange={handleChange}
-                  {...fieldCls("liquidation")} />
+                  className="border border-gray-200 p-3 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-purple-300" />
               </div>
 
               <div className="flex flex-col gap-1">
                 <label className="text-xs font-semibold text-gray-600">Liquidation Report No.</label>
                 <input type="text" name="liquidation_report_number" placeholder="Report number" value={formData.liquidation_report_number} onChange={handleChange}
-                  {...fieldCls("liquidation")} />
+                  className="border border-gray-200 p-3 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-purple-300" />
               </div>
 
               {/* ── STATUS & COMPLETION ── */}
-              <SectionLabel sectionKey="status_completion">Status &amp; Completion</SectionLabel>
+              <SectionLabel>Status &amp; Completion</SectionLabel>
 
               <div className="flex flex-col gap-1">
-                <label className="text-xs font-semibold text-gray-600">
-                  Status {can("status_completion") && <span className="text-red-500">*</span>}
-                </label>
-                <select name="status" value={formData.status} onChange={handleChange}
-                  required={can("status_completion")}
-                  disabled={!can("status_completion")}
-                  className={`border border-gray-200 p-3 rounded-xl text-sm focus:outline-none focus:ring-2 transition-colors ${
-                    !can("status_completion") ? "bg-gray-100 text-gray-400 cursor-not-allowed opacity-70" : inputFocusRing
-                  }`}>
+                <label className="text-xs font-semibold text-gray-600">Status *</label>
+                <select name="status" value={formData.status} onChange={handleChange} required
+                  className="border border-gray-200 p-3 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-purple-300">
                   <option value="">— Select status —</option>
                   <option value="Ongoing">Ongoing</option>
                   <option value="Done">Completed</option>
@@ -546,31 +490,23 @@ export default function Dashboard() {
                 <label className="text-xs font-semibold text-gray-600">Date Submitted to COA</label>
                 <input type="date" name="date_submitted_to_coa"
                   value={formData.date_submitted_to_coa} onChange={handleChange}
-                  {...fieldCls("status_completion")} />
+                  className="border border-gray-200 p-3 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-purple-300" />
               </div>
 
               <div className="flex flex-col gap-1 md:col-span-2">
                 <label className="text-xs font-semibold text-gray-600">Remarks</label>
                 <textarea name="remarks" rows={2} placeholder="Optional notes…"
                   value={formData.remarks} onChange={handleChange}
-                  disabled={!can("status_completion")}
-                  className={`border border-gray-200 p-3 rounded-xl text-sm focus:outline-none focus:ring-2 resize-none transition-colors ${
-                    !can("status_completion") ? "bg-gray-100 text-gray-400 cursor-not-allowed opacity-70" : inputFocusRing
-                  }`} />
+                  className="border border-gray-200 p-3 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-purple-300 resize-none" />
               </div>
 
-              {/* ── Buttons ── */}
-              <div className={`md:col-span-2 flex gap-3 justify-end mt-2 pt-4 border-t transition-colors ${
-                theme === 'green' ? 'border-[#86C99B]/40' : 'border-purple-100'
-              }`}>
+              <div className="md:col-span-2 flex gap-3 justify-end mt-2 pt-4 border-t border-purple-100">
                 <button type="button" onClick={() => setShowModal(false)}
                   className="px-6 py-2.5 rounded-xl border border-gray-200 text-gray-600 hover:bg-gray-50 transition text-sm font-medium">
                   Cancel
                 </button>
                 <button type="submit"
-                  className={`px-6 py-2.5 rounded-xl text-white transition text-sm font-semibold shadow-md ${
-                    theme === 'green' ? 'bg-[#128A42] hover:bg-[#0C6B31]' : 'bg-purple-600 hover:bg-purple-700'
-                  }`}>
+                  className="px-6 py-2.5 rounded-xl bg-purple-600 hover:bg-purple-700 text-white transition text-sm font-semibold">
                   {isEditing ? "Update Record" : "Save Cash Advance"}
                 </button>
               </div>

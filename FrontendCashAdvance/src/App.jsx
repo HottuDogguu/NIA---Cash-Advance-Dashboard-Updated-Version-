@@ -15,7 +15,12 @@ function PrivateRoute({ children }) {
 function AdminRoute({ children }) {
   const user = JSON.parse(localStorage.getItem("user") || "{}");
   if (!user?.id) return <Navigate to="/" replace />;
-  if (user.role !== "admin") return <Navigate to="/dashboard" replace />;
+  
+  // ALLOW BOTH ADMIN AND IT_ROLE
+  if (user.role !== "admin" && user.role !== "it_role") {
+    return <Navigate to="/dashboard" replace />;
+  }
+  
   return children;
 }
 

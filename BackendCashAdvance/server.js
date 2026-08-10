@@ -48,7 +48,19 @@ const pool = mysql.createPool({
   }
 })();
 
-// ── Audit helper ─────────────────────────────────────────────
+// ── Security & Audit Helpers ─────────────────────────────────
+
+// Fetch the role of the user making the request
+async function getUserRole(userId) {
+  if (!userId) return null;
+  try {
+    const [rows] = await pool.query("SELECT role FROM users WHERE id=?", [userId]);
+    return rows.length ? rows[0].role : null;
+  } catch (e) {
+    return null;
+  }
+}
+
 async function logAudit(caId, userId, action, field = null, oldVal = null, newVal = null, dvNum = null) {
   try {
     await pool.query(
@@ -109,7 +121,6 @@ app.post("/login", async (req, res) => {
 // USER MANAGEMENT
 // =====================================================
 
-// GET all users
 app.get("/api/users", async (req, res) => {
   try {
     const [rows] = await pool.query(
@@ -119,7 +130,6 @@ app.get("/api/users", async (req, res) => {
   } catch (e) { res.status(500).json({ message: e.message }); }
 });
 
-// POST create user
 app.post("/api/users", async (req, res) => {
   const { username, password, role, descrip, permissions } = req.body;
   if (!username || !password || !role)
@@ -139,7 +149,6 @@ app.post("/api/users", async (req, res) => {
   }
 });
 
-// PUT update user
 app.put("/api/users/:id", async (req, res) => {
   const { id } = req.params;
   const { username, password, role, descrip, permissions } = req.body;
@@ -175,15 +184,35 @@ app.put("/api/users/:id", async (req, res) => {
   }
 });
 
-// DELETE user
 app.delete("/api/users/:id", async (req, res) => {
   const { id } = req.params;
   const { requesting_user_id } = req.body;
+  
   if (String(requesting_user_id) === String(id))
     return res.status(400).json({ message: "You cannot delete your own account" });
+    
   try {
+    // SECURITY: Ensure the requester has permission to delete this specific user
+    const reqRole = await getUserRole(requesting_user_id);
     const [rows] = await pool.query("SELECT * FROM users WHERE id=?", [id]);
+    
     if (!rows.length) return res.status(404).json({ message: "User not found" });
+    const targetUser = rows[0];
+
+    if (!["it_role", "admin"].includes(reqRole)) {
+      return res.status(403).json({ message: "Permission denied. You cannot delete users." });
+    }
+    
+    // SECURITY: Only IT_role can delete Admin accounts
+    if (targetUser.role === "admin" && reqRole !== "it_role") {
+      return res.status(403).json({ message: "Permission denied. Only IT can delete Administrators." });
+    }
+    
+    // SECURITY: No one can delete an IT_role account except the database admin
+    if (targetUser.role === "it_role") {
+      return res.status(403).json({ message: "Permission denied. IT accounts cannot be deleted from the dashboard." });
+    }
+
     await pool.query("DELETE FROM users WHERE id=?", [id]);
     res.json({ message: "User deleted successfully" });
   } catch (e) { res.status(500).json({ message: e.message }); }
@@ -211,7 +240,6 @@ app.get("/api/stats", async (req, res) => {
 // CASH ADVANCES — CRUD
 // =====================================================
 
-// GET all
 app.get("/api/cash_advance_dashboard", async (req, res) => {
   try {
     const { search } = req.query;
@@ -255,10 +283,16 @@ app.get("/api/cash_advance_dashboard", async (req, res) => {
   }
 });
 
-// POST create
 app.post("/api/cash_advance_dashboard", async (req, res) => {
   try {
     const b = req.body;
+
+    // SECURITY: Ensure user has permission to add
+    const role = await getUserRole(b.user_id);
+    if (!["it_role", "admin", "cash_user", "cash_staff"].includes(role)) {
+      return res.status(403).json({ message: "Permission denied. You cannot create records." });
+    }
+
     const [result] = await pool.query(
       `INSERT INTO cash_advances
          (fund,dv_date,dv_number,bonded_official_id,accountable_official,description,
@@ -286,11 +320,16 @@ app.post("/api/cash_advance_dashboard", async (req, res) => {
   } catch (e) { res.status(500).json({ message: e.message }); }
 });
 
-// PUT update
 app.put("/api/cash_advance_dashboard/:id", async (req, res) => {
   try {
     const { id } = req.params;
     const b = req.body;
+
+    // SECURITY: Ensure user has permission to edit
+    const role = await getUserRole(b.user_id);
+    if (!["it_role", "admin", "cash_user", "cash_staff"].includes(role)) {
+      return res.status(403).json({ message: "Permission denied. You cannot edit records." });
+    }
 
     const [oldRows] = await pool.query("SELECT * FROM cash_advances WHERE id=? AND deleted_at IS NULL", [id]);
     if (!oldRows.length) return res.status(404).json({ message: "Record not found" });
@@ -330,17 +369,25 @@ app.put("/api/cash_advance_dashboard/:id", async (req, res) => {
   } catch (e) { res.status(500).json({ message: e.message }); }
 });
 
-// DELETE
 app.delete("/api/cash_advance_dashboard/:id", async (req, res) => {
   try {
     const { id } = req.params;
     const { user_id } = req.body;
+
+    // SECURITY: Block staff from deleting entirely!
+    const role = await getUserRole(user_id);
+    if (!["it_role", "admin"].includes(role)) {
+      return res.status(403).json({ message: "Permission denied. Only Administrators and IT can delete records." });
+    }
+
     const [rows] = await pool.query("SELECT * FROM cash_advances WHERE id=? AND deleted_at IS NULL", [id]);
     if (!rows.length) return res.status(404).json({ message: "Record not found" });
     const r = rows[0];
     await pool.query("UPDATE cash_advances SET deleted_at=NOW() WHERE id=?", [id]);
+    
     if (r.bonded_official_id && r.status==="Ongoing")
       await pool.query("UPDATE bonded_officials SET is_available=1 WHERE id=?", [r.bonded_official_id]);
+      
     await logAudit(id, user_id, "Delete", null, r.dv_number, null, r.dv_number);
     res.json({ message: "Deleted successfully" });
   } catch (e) { res.status(500).json({ message: e.message }); }
@@ -404,7 +451,6 @@ app.get("/audit_logs", async (req, res) => {
 // FILE UPLOAD ROUTES
 // =====================================================
 
-// POST /api/cash_advance_dashboard/:id/upload
 app.post("/api/cash_advance_dashboard/:id/upload", upload.single("file"), async (req, res) => {
   const { id } = req.params;
 
@@ -443,7 +489,6 @@ app.post("/api/cash_advance_dashboard/:id/upload", upload.single("file"), async 
   }
 });
 
-// DELETE /api/cash_advance_dashboard/:id/file
 app.delete("/api/cash_advance_dashboard/:id/file", async (req, res) => {
   const { id } = req.params;
 

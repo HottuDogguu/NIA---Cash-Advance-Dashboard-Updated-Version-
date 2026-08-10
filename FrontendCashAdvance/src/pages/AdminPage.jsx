@@ -46,6 +46,10 @@ const SECTIONS = [
 
 // Default section permissions per role
 const ROLE_DEFAULTS = {
+  it_role: { // Super Admin has full access
+    general_details: true, financials: true, reimbursement_details: true,
+    refund_details: true, liquidation: true, status_completion: true,
+  },
   admin: {
     general_details: true, financials: true, reimbursement_details: true,
     refund_details: true, liquidation: true, status_completion: true,
@@ -66,6 +70,7 @@ const EMPTY_PERM = {
 };
 
 const ROLE_LABELS = {
+  it_role:     "System Admin (IT)",
   admin:       "Administrator",
   cash_user:   "Cash Advance Staff",
   claims_user: "Claims Staff",
@@ -92,6 +97,7 @@ export default function AdminPage() {
   const [toast,     setToast]     = useState(null);
 
   const currentUser = JSON.parse(localStorage.getItem("user") || "{}");
+  const isITRole = currentUser.role === "it_role";
 
   const EMPTY = {
     username: "",
@@ -126,15 +132,15 @@ export default function AdminPage() {
     setForm((f) => ({
       ...f,
       role,
-      permissions: role === "admin"
-        ? { ...ROLE_DEFAULTS.admin }
+      permissions: (role === "admin" || role === "it_role")
+        ? { ...ROLE_DEFAULTS[role] }
         : { ...EMPTY_PERM, ...(ROLE_DEFAULTS[role] || {}) },
     }));
   };
 
   // Toggle individual section access
   const toggleSection = (key) => {
-    if (form.role === "admin") return;
+    if (form.role === "admin" || form.role === "it_role") return;
     setForm((f) => ({
       ...f,
       permissions: { ...f.permissions, [key]: !f.permissions[key] },
@@ -143,7 +149,7 @@ export default function AdminPage() {
 
   // Select / Deselect all sections
   const toggleAll = (checked) => {
-    if (form.role === "admin") return;
+    if (form.role === "admin" || form.role === "it_role") return;
     const all = {};
     SECTIONS.forEach((s) => { all[s.key] = checked; });
     setForm((f) => ({ ...f, permissions: all }));
@@ -172,9 +178,10 @@ export default function AdminPage() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    const isSuperRole = form.role === "admin" || form.role === "it_role";
     const payload = {
       ...form,
-      permissions: JSON.stringify(form.role === "admin" ? ROLE_DEFAULTS.admin : form.permissions),
+      permissions: JSON.stringify(isSuperRole ? ROLE_DEFAULTS[form.role] : form.permissions),
     };
 
     try {
@@ -212,6 +219,7 @@ export default function AdminPage() {
 
   // Dynamic Theme Variables
   const getRoleColors = (role) => {
+    if (role === 'it_role') return 'bg-gray-800 text-white';
     if (role === 'admin') return theme === 'green' ? 'bg-[#E3F5E9] text-[#128A42]' : 'bg-purple-100 text-purple-700';
     if (role === 'cash_user') return 'bg-blue-100 text-blue-700';
     if (role === 'claims_user') return 'bg-teal-100 text-teal-700';
@@ -249,8 +257,8 @@ export default function AdminPage() {
       <div className="grid grid-cols-3 gap-4">
         {[
           { label: "Total Users",    value: users.length,                                color: theme === 'green' ? "text-[#128A42]" : "text-purple-600" },
-          { label: "Administrators", value: users.filter(u=>u.role==="admin").length,  color: "text-indigo-600" },
-          { label: "Staff Accounts", value: users.filter(u=>u.role!=="admin").length,  color: "text-teal-600"   },
+          { label: "Administrators", value: users.filter(u=>u.role==="admin" || u.role==="it_role").length,  color: "text-indigo-600" },
+          { label: "Staff Accounts", value: users.filter(u=>u.role!=="admin" && u.role!=="it_role").length,  color: "text-teal-600"   },
         ].map(({ label, value, color }) => (
           <div key={label} className={`bg-white rounded-2xl p-5 shadow-sm border transition-colors ${borderClass}`}>
             <p className={`text-2xl font-bold ${color}`}>{value}</p>
@@ -291,11 +299,18 @@ export default function AdminPage() {
                 const highlightBg = theme === 'green' ? 'bg-[#E3F5E9]' : 'bg-purple-50';
                 const hoverBg = theme === 'green' ? 'hover:bg-[#E3F5E9]' : 'hover:bg-purple-50';
 
+                // Check if the current user has permission to modify the user in this row
+                const isTargetAdmin = u.role === "admin" || u.role === "it_role";
+                
+                // Allow modification if logged in as IT, if target is not an admin, or if editing YOURSELF
+                const canModifyThisUser = isITRole || !isTargetAdmin || isCurrent;
+
                 const perms = u.permissions
                   ? (typeof u.permissions === "string" ? JSON.parse(u.permissions) : u.permissions)
                   : ROLE_DEFAULTS[u.role] || EMPTY_PERM;
 
-                const grantedCount = u.role === "admin"
+                const isSuperRole = u.role === "admin" || u.role === "it_role";
+                const grantedCount = isSuperRole
                   ? SECTIONS.length
                   : SECTIONS.filter(s => perms[s.key]).length;
 
@@ -329,7 +344,7 @@ export default function AdminPage() {
                       <div className="flex items-center gap-2">
                         <div className="flex gap-1 flex-wrap max-w-[180px]">
                           {SECTIONS.map(s => {
-                            const granted = u.role === "admin" || perms[s.key];
+                            const granted = isSuperRole || perms[s.key];
                             return (
                               <span key={s.key} title={s.label}
                                 className={`text-xs px-1.5 py-0.5 rounded font-medium ${
@@ -346,22 +361,26 @@ export default function AdminPage() {
 
                     <td className="px-5 py-4 text-gray-400 text-xs">{fmtDate(u.created_at)}</td>
                     <td className="px-5 py-4">
-                      <div className="flex gap-2">
-                        <button
-                          onClick={() => openEdit(u)}
-                          className="bg-blue-500 hover:bg-blue-600 text-white px-3 py-1.5 rounded-lg text-xs font-semibold transition"
-                        >
-                          ✏️ Edit
-                        </button>
-                        {!isCurrent && (
+                      {canModifyThisUser ? (
+                        <div className="flex gap-2">
                           <button
-                            onClick={() => handleDelete(u.id, u.username)}
-                            className="bg-red-500 hover:bg-red-600 text-white px-3 py-1.5 rounded-lg text-xs font-semibold transition"
+                            onClick={() => openEdit(u)}
+                            className="bg-blue-500 hover:bg-blue-600 text-white px-3 py-1.5 rounded-lg text-xs font-semibold transition"
                           >
-                            🗑 Delete
+                            ✏️ Edit
                           </button>
-                        )}
-                      </div>
+                          {!isCurrent && (
+                            <button
+                              onClick={() => handleDelete(u.id, u.username)}
+                              className="bg-red-500 hover:bg-red-600 text-white px-3 py-1.5 rounded-lg text-xs font-semibold transition"
+                            >
+                              🗑 Delete
+                            </button>
+                          )}
+                        </div>
+                      ) : (
+                        <span className="text-xs font-semibold text-gray-400 italic">🔒 Restricted</span>
+                      )}
                     </td>
                   </tr>
                 );
@@ -429,6 +448,7 @@ export default function AdminPage() {
                   required
                   className={`w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 transition-colors ${inputFocusRing}`}
                 >
+                  {isITRole && <option value="it_role">System Admin (IT)</option>}
                   <option value="admin">Administrator</option>
                   <option value="cash_user">Cash Advance Staff</option>
                   <option value="claims_user">Claims Staff</option>
@@ -452,7 +472,7 @@ export default function AdminPage() {
 
               {/* SECTION PERMISSIONS CHECKBOXES */}
               <div className={`rounded-xl border p-4 transition-colors ${
-                form.role === "admin"
+                (form.role === "admin" || form.role === "it_role")
                   ? (theme === 'green' ? "bg-green-50 border-green-200" : "bg-purple-50 border-purple-200")
                   : "bg-gray-50 border-gray-200"
               }`}>
@@ -465,7 +485,7 @@ export default function AdminPage() {
                       Check which sections this user can fill in
                     </p>
                   </div>
-                  {form.role !== "admin" && (
+                  {(form.role !== "admin" && form.role !== "it_role") && (
                     <button type="button"
                       onClick={() => toggleAll(!allChecked)}
                       className={`text-xs font-semibold hover:underline whitespace-nowrap ${
@@ -476,11 +496,11 @@ export default function AdminPage() {
                   )}
                 </div>
 
-                {form.role === "admin" ? (
+                {(form.role === "admin" || form.role === "it_role") ? (
                   <div className="flex items-center gap-2 text-green-700">
                     <span className="text-lg">✅</span>
                     <p className="text-xs font-semibold">
-                      Admin has full access to all sections by default.
+                      {form.role === "it_role" ? "System Admins" : "Admins"} have full access to all sections by default.
                     </p>
                   </div>
                 ) : (
@@ -517,7 +537,7 @@ export default function AdminPage() {
                   </div>
                 )}
 
-                {form.role !== "admin" && !someChecked && (
+                {(form.role !== "admin" && form.role !== "it_role") && !someChecked && (
                   <p className="text-xs text-amber-600 mt-3 flex items-center gap-1">
                     ⚠️ This user has no section access — they won't be able to edit form fields.
                   </p>

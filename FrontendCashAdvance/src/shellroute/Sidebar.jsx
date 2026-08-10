@@ -10,11 +10,16 @@ export default function Sidebar() {
   const [officials, setOfficials] = useState([]);
   const [loading,   setLoading]   = useState(true);
   const navigate  = useNavigate();
-  const user      = JSON.parse(localStorage.getItem("user") || "{}");
-  const isAdmin   = user.role === "admin";
+  
+  // ROLE LOGIC
+  const user        = JSON.parse(localStorage.getItem("user") || "{}");
+  const isAdmin     = user.role === "admin";
+  const isITRole    = user.role === "it_role";
+  const isSuperRole = isAdmin || isITRole; // Both Admin and IT get access to admin features
+  
   const scrollbarStyles = theme === 'green' 
-     ? "[&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:bg-[#86C99B] [&::-webkit-scrollbar-thumb]:rounded-full"
-      : "[&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:bg-purple-400 [&::-webkit-scrollbar-thumb]:rounded-full";
+      ? "[&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:bg-[#86C99B] [&::-webkit-scrollbar-thumb]:rounded-full"
+       : "[&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:bg-purple-400 [&::-webkit-scrollbar-thumb]:rounded-full";
 
   useEffect(() => {
     fetch("http://localhost:3000/onlyoneBonded_Officials")
@@ -93,7 +98,7 @@ export default function Sidebar() {
       {/* Navigation (Now Scrollable) */}
       <nav className={`flex flex-col gap-1 p-3 mt-2 flex-1 min-h-0 overflow-y-auto pr-1 ${scrollbarStyles}`}>
         {navItems
-          .filter(({ adminOnly }) => !adminOnly || isAdmin)
+          .filter(({ adminOnly }) => !adminOnly || isSuperRole) // UPDATED FILTER LOGIC HERE
           .map(({ to, label, Icon, adminOnly }) => (
             <NavLink
               key={to}
@@ -112,7 +117,7 @@ export default function Sidebar() {
                 <span className={`ml-auto text-xs px-1.5 py-0.5 rounded-full transition-colors ${
                   theme === 'green' ? 'bg-[#0C6B31] text-[#E3F5E9]' : 'bg-purple-800 text-purple-200'
                 }`}>
-                  Admin
+                  {isITRole ? "IT Admin" : "Admin"}
                 </span>
               )}
             </NavLink>
@@ -132,7 +137,7 @@ export default function Sidebar() {
           </div>
           <div className="overflow-hidden">
             <p className="text-xs font-semibold text-gray-900 truncate">{user.username}</p>
-            <p className="text-xs text-gray-600 truncate">{user.role}</p>
+            <p className="text-xs text-gray-600 truncate">{user.role === 'it_role' ? 'System IT' : user.role}</p>
           </div>
         </div>
 
